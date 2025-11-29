@@ -1,7 +1,7 @@
 package com.example.psycho.repository;
 
 import com.example.psycho.entity.UserEntity;
-import com.example.psycho.enums.UserRole;
+import com.example.psycho.model.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

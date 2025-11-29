@@ -1,6 +1,6 @@
 package com.example.psycho.entity;
 
-import com.example.psycho.enums.AppointmentStatus;
+import com.example.psycho.model.AppointmentStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

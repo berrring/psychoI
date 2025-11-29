@@ -3,7 +3,7 @@ package com.example.psycho.service;
 
 import com.example.psycho.dto.UserResponseDto;
 import com.example.psycho.entity.UserEntity;
-import com.example.psycho.enums.UserRole;
+import com.example.psycho.model.UserRole;
 import com.example.psycho.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 

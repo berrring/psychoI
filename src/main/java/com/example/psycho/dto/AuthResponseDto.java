@@ -1,6 +1,6 @@
 package com.example.psycho.dto;
 
-import com.example.psycho.enums.UserRole;
+import com.example.psycho.model.UserRole;
 
 public record AuthResponseDto(
         String token,

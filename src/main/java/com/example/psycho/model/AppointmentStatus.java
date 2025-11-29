@@ -1,4 +1,4 @@
-package com.example.psycho.enums;
+package com.example.psycho.model;
 
 public enum AppointmentStatus {
     BOOKED,

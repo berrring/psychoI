@@ -1,6 +1,6 @@
 package com.example.psycho.dto;
 
-import com.example.psycho.enums.UserRole;
+import com.example.psycho.model.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

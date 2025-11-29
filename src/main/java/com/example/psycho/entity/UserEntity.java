@@ -1,6 +1,6 @@
 package com.example.psycho.entity;
 
-import com.example.psycho.enums.UserRole;
+import com.example.psycho.model.UserRole;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

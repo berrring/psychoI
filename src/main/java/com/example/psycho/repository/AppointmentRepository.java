@@ -1,7 +1,7 @@
 package com.example.psycho.repository;
 
 import com.example.psycho.entity.AppointmentEntity;
-import com.example.psycho.enums.AppointmentStatus;
+import com.example.psycho.model.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

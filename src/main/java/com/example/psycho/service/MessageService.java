@@ -4,7 +4,7 @@ import com.example.psycho.dto.MessageResponseDto;
 import com.example.psycho.dto.MessageSendRequestDto;
 import com.example.psycho.entity.AppointmentEntity;
 import com.example.psycho.entity.MessageEntity;
-import com.example.psycho.enums.AppointmentStatus;
+import com.example.psycho.model.AppointmentStatus;
 import com.example.psycho.repository.AppointmentRepository;
 import com.example.psycho.repository.MessageRepository;
 import com.example.psycho.repository.UserRepository;

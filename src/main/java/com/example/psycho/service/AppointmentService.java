@@ -3,7 +3,7 @@
     import com.example.psycho.dto.AppointmentRequestDto;
     import com.example.psycho.dto.AppointmentResponseDto;
     import com.example.psycho.entity.AppointmentEntity;
-    import com.example.psycho.enums.AppointmentStatus;
+    import com.example.psycho.model.AppointmentStatus;
     import com.example.psycho.repository.AppointmentRepository;
     import com.example.psycho.repository.UserRepository;
     import jakarta.persistence.EntityNotFoundException;

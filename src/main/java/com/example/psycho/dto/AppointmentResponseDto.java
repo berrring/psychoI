@@ -1,6 +1,6 @@
 package com.example.psycho.dto;
 
-import com.example.psycho.enums.AppointmentStatus;
+import com.example.psycho.model.AppointmentStatus;
 
 import java.time.LocalDateTime;
 
