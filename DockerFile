@@ -1,0 +1,25 @@
+# ЭТАП 1: Сборка (Build)
+# Используем образ с готовым Maven и Java 17
+FROM maven:3.8.5-openjdk-17 AS build
+WORKDIR /app
+
+# Копируем все файлы проекта в контейнер
+COPY . .
+
+# Собираем проект в один файл (пропуская тесты, чтобы быстрее)
+RUN mvn clean package -DskipTests
+
+# ЭТАП 2: Запуск (Run)
+# Берем чистую Java 17 (чтобы образ весил мало)
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+
+# Копируем созданный JAR файл из этапа сборки
+# Имя psycho-0.0.1-SNAPSHOT.jar берется из твоего pom.xml
+COPY --from=build /app/target/psycho-0.0.1-SNAPSHOT.jar app.jar
+
+# Говорим, какой порт будет слушать приложение
+EXPOSE 8080
+
+# Команда запуска
+ENTRYPOINT ["java", "-jar", "app.jar"]
