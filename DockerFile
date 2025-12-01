@@ -1,24 +1,26 @@
 # ЭТАП 1: Сборка (Build)
-# Используем образ Maven с Java 17 (Eclipse Temurin - надежный стандарт)
+# Используем надежный образ Eclipse Temurin JDK 17
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Копируем файлы
+# Копируем код
 COPY . .
 
-# Собираем
+# Собираем (пропускаем тесты для скорости)
 RUN mvn clean package -DskipTests
 
 # ЭТАП 2: Запуск (Run)
-# Используем легкую версию Java 17 для запуска
+# Используем легкую версию JRE для запуска
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Копируем JAR
-COPY --from=build /app/target/psycho-0.0.1-SNAPSHOT.jar app.jar
+# !!! ВАЖНОЕ ИСПРАВЛЕНИЕ ТУТ !!!
+# Вместо конкретного имени (psycho...) используем звездочку *.jar
+# Это спасет от ошибки "File not found"
+COPY --from=build /app/target/*.jar app.jar
 
-# Порт
+# Открываем порт
 EXPOSE 8080
 
-# Запуск
+# Запускаем
 ENTRYPOINT ["java", "-jar", "app.jar"]
