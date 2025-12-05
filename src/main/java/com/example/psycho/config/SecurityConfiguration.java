@@ -27,13 +27,20 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Отключаем CSRF, т.к. у нас REST API
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Разрешаем доступ к /auth/register и /auth/login всем
-                        .anyRequest().authenticated() // Все остальные запросы требуют токен
+                        // Открываем доступ к авторизации
+                        .requestMatchers("/auth/**").permitAll()
+
+                        // 👇 ДОБАВЬ ВОТ ЭТУ СТРОЧКУ 👇
+                        // Открываем доступ к документации Swagger (UI и JSON-схемы)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Всё остальное закрыто
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Не храним сессию на сервере (у нас JWT)
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
