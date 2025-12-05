@@ -3,7 +3,9 @@
     import com.example.psycho.dto.AppointmentRequestDto;
     import com.example.psycho.dto.AppointmentResponseDto;
     import com.example.psycho.entity.AppointmentEntity;
+    import com.example.psycho.entity.UserEntity;
     import com.example.psycho.model.AppointmentStatus;
+    import com.example.psycho.model.UserRole;
     import com.example.psycho.repository.AppointmentRepository;
     import com.example.psycho.repository.UserRepository;
     import jakarta.persistence.EntityNotFoundException;
@@ -31,11 +33,23 @@
 
         }
 
+        // ... импорты
+
         public AppointmentResponseDto createAppointment(AppointmentRequestDto request) {
-            // 1. ПРОВЕРКА НА ЗАНЯТОСТЬ
-            // Если существует запись у этого врача, на это время и она АКТИВНА (BOOKED) -> Ошибка
+
+            // 1. Ищем ГЛАВНОГО и ЕДИНСТВЕННОГО психолога в базе
+            List<UserEntity> psychologists = userRepository.findByRole(UserRole.PSYCHOLOGIST);
+
+            if (psychologists.isEmpty()) {
+                throw new RuntimeException("Ошибка сервера: В базе нет ни одного психолога!");
+            }
+
+            // Берем первого (он у нас теперь один — Доктор Стрэндж)
+            UserEntity mainPsychologist = psychologists.get(0);
+
+            // 2. ПРОВЕРКА НА ЗАНЯТОСТЬ
             boolean isBusy = appointmentRepository.existsByPsychologistIdAndTimeAndStatus(
-                    request.psychologistId(),
+                    mainPsychologist.getId(), // Используем ID найденного врача
                     request.time(),
                     AppointmentStatus.BOOKED
             );
@@ -44,22 +58,22 @@
                 throw new RuntimeException("Извините, это время уже занято!");
             }
 
-            // 2. Ищем участников
+            // 3. Ищем клиента
             var client = userRepository.findById(request.clientId())
                     .orElseThrow(() -> new RuntimeException("Client not found"));
-            var psychologist = userRepository.findById(request.psychologistId())
-                    .orElseThrow(() -> new RuntimeException("Psycho not found"));
 
-            // 3. Создаем запись
+            // 4. Создаем запись
             var appointmentToSave = new AppointmentEntity();
             appointmentToSave.setClient(client);
-            appointmentToSave.setPsychologist(psychologist);
+            appointmentToSave.setPsychologist(mainPsychologist); // <-- Подставляем врача
             appointmentToSave.setTime(request.time());
             appointmentToSave.setStatus(AppointmentStatus.BOOKED);
 
             var saved = appointmentRepository.save(appointmentToSave);
             return toResponse(saved);
         }
+
+// ... методы update, getById и т.д. остаются, но в toResponse всё сработает само.
 
         @Transactional
         public void toCancelAppointment(Long id){

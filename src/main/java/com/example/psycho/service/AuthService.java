@@ -4,6 +4,7 @@ import com.example.psycho.dto.AuthResponseDto;
 import com.example.psycho.dto.LoginRequestDto;
 import com.example.psycho.dto.RegisterRequestDto;
 import com.example.psycho.entity.UserEntity;
+import com.example.psycho.model.UserRole;
 import com.example.psycho.repository.UserRepository;
 import com.example.psycho.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,11 +35,12 @@ public class AuthService {
         }
 
         var user = new UserEntity();
-        // Убедись, что в Entity у тебя есть соответствующие сеттеры или конструктор
         user.setEmail(registerRequestDto.email());
         user.setName(registerRequestDto.name());
         user.setPassword(passwordEncoder.encode(registerRequestDto.password()));
-        user.setRole(registerRequestDto.role());
+
+        // ХАРДКОДИМ РОЛЬ: Все, кто регаются через приложение — клиенты
+        user.setRole(UserRole.CLIENT);
 
         user = userRepository.save(user);
 
