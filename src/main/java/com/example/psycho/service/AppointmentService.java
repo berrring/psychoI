@@ -85,22 +85,27 @@
         }
 
 
-        public AppointmentResponseDto appointmentUpdate(Long id,
-                                                                  AppointmentResponseDto appointmenToUpdate) {
+        // Исправленный метод
+        public AppointmentResponseDto appointmentUpdate(Long id, AppointmentResponseDto appointmenToUpdate) {
             AppointmentEntity appointmentEntity = appointmentRepository.findById(id)
                     .orElseThrow(()-> new EntityNotFoundException("Appointment not found by id: " + id));
+
+            // 1. Исправляем поиск КЛИЕНТА
             if(appointmenToUpdate.clientId() != null){
-                var client = userRepository.findById(id)
-                        .orElseThrow(()-> new EntityNotFoundException("Client not found by id: " + id));
+                var client = userRepository.findById(appointmenToUpdate.clientId()) // <-- БЕРЕМ ID ИЗ DTO
+                        .orElseThrow(()-> new EntityNotFoundException("Client not found"));
                 appointmentEntity.setClient(client);
-
             }
+
+            // 2. Исправляем поиск ПСИХОЛОГА
             if(appointmenToUpdate.psychologistId() != null){
-                var psychologist = userRepository.findById(id)
-                        .orElseThrow(()-> new RuntimeException("Psychologist not found by id" + id));
+                var psychologist = userRepository.findById(appointmenToUpdate.psychologistId()) // <-- БЕРЕМ ID ИЗ DTO
+                        .orElseThrow(()-> new RuntimeException("Psychologist not found"));
                 appointmentEntity.setPsychologist(psychologist);
-
             }
+
+            // ... остальное ок
+
             if(appointmenToUpdate.time() != null){
                 appointmentEntity.setTime(appointmenToUpdate.time());
             }

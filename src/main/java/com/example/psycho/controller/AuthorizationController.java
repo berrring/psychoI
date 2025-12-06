@@ -23,7 +23,9 @@ public class AuthorizationController{
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDto> register(
             @Valid @RequestBody RegisterRequestDto registerRequestDto
-            ){
+    ){
+        System.out.println("🔥 ЗАПРОС ПРИШЕЛ! Email: " + registerRequestDto.email());
+
         return ResponseEntity.ok(authService.register(registerRequestDto));
     }
 
