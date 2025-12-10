@@ -37,7 +37,7 @@ public class MessageService {
                         .orElseThrow(()-> new EntityNotFoundException("Appointment not found by id"));
         var sender = userRepository.findById(messageToSend.senderId())
                        .orElseThrow(()-> new EntityNotFoundException("Sender not found by id"));
-        checkChatAccess(appointment, messageToSend.senderId());
+        //checkChatAccess(appointment, messageToSend.senderId());
         var newMessage = new MessageEntity(
                     appointment,
                     sender,
