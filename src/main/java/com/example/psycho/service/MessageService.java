@@ -48,21 +48,20 @@ public class MessageService {
         return toResponseMessage(saved);
 
     }
-    private void checkChatAccess(AppointmentEntity appointment,
-                                 Long senderId){
-        LocalDateTime now = LocalDateTime.now();
+    private void checkChatAccess(AppointmentEntity appointment, Long senderId) {
+        LocalDateTime now = LocalDateTime.now(); // Время сервера (UTC)
         LocalDateTime startTime = appointment.getTime();
-        LocalDateTime endTime = startTime.plusMinutes(60);
-        if (now.isBefore(startTime) || now.isAfter(endTime)) {
-            // Дополнительно можно проверить статус: не должно быть CANCELLED
-            if (appointment.getStatus() != AppointmentStatus.BOOKED) {
-                throw new IllegalStateException("Appointment is not active.");
-            }
-            throw new IllegalStateException("Chat is only available during the appointment window: "
-                    + startTime + " to " + endTime);
+
+        // Расширяем окно доступа (-5 часов и +6 часов), чтобы компенсировать разницу часовых поясов (Бишкек vs UTC)
+        LocalDateTime accessStart = startTime.minusHours(5);
+        LocalDateTime accessEnd = startTime.plusHours(6);
+
+        if (now.isBefore(accessStart) || now.isAfter(accessEnd)) {
+            // Если время сервера не попадает в расширенное окно — запрещаем доступ
+            throw new IllegalStateException("Чат недоступен. Окно доступа: с " + accessStart + " по " + accessEnd);
         }
 
-        // Проверка прав: Отправитель должен быть либо клиентом, либо психологом в этой записи
+        // Проверка: отправитель должен быть участником записи
         if (!appointment.getClient().getId().equals(senderId) &&
                 !appointment.getPsychologist().getId().equals(senderId)) {
             throw new SecurityException("User does not belong to this appointment.");
