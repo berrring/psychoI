@@ -5,6 +5,7 @@ import com.example.psycho.dto.AppointmentRequestDto;
 import com.example.psycho.dto.AppointmentResponseDto;
 import com.example.psycho.service.AppointmentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class AppointmentController{
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasAuthority('CLIENT')")
     public ResponseEntity<AppointmentResponseDto> createNewAppointment(
             @RequestBody AppointmentRequestDto appointmentToCreate
     ){
@@ -28,6 +30,7 @@ public class AppointmentController{
     }
 
     @GetMapping("{id}")
+    @PreAuthorize("hasAnyAuthority('CLIENT', 'PSYCHOLOGIST')")
     public ResponseEntity<AppointmentResponseDto> getAppointmentId(
             @PathVariable Long id
     ){
@@ -35,6 +38,7 @@ public class AppointmentController{
     }
 
     @PutMapping("{id}")
+    @PreAuthorize("hasAuthority('PSYCHOLOGIST')")
     public ResponseEntity<AppointmentResponseDto> updateAppointment(
         @PathVariable Long id,
         @RequestBody AppointmentResponseDto appointmenToUpdate
@@ -45,6 +49,7 @@ public class AppointmentController{
 
 
     @DeleteMapping("/cancel/{id}")
+    @PreAuthorize("hasAnyAuthority('CLIENT', 'PSYCHOLOGIST')")
     public ResponseEntity<Void> deleteAppointment(
             @PathVariable Long id
     ){
@@ -53,6 +58,7 @@ public class AppointmentController{
     }
 
     @GetMapping("/client/{clientId}")
+    @PreAuthorize("hasAuthority('PSYCHOLOGIST')")
     public ResponseEntity<List<AppointmentResponseDto>> findByClientId(
             @PathVariable Long clientId
     ){
@@ -60,6 +66,7 @@ public class AppointmentController{
     }
 
     @GetMapping("/psychologist/{psychologistId}")
+    @PreAuthorize("hasAnyAuthority('CLIENT', 'PSYCHOLOGIST')")
     public ResponseEntity<List<AppointmentResponseDto>> findPsychologistId(
             @PathVariable Long psychologistId
     ){

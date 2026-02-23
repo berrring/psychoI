@@ -9,10 +9,10 @@ import com.example.psycho.model.UserRole;
 import com.example.psycho.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class UserService {
@@ -34,18 +34,14 @@ public class UserService {
 
 
 
-    public List<UserResponseDto> getAllPsychologists() {
-        return userRepository.findByRole(UserRole.PSYCHOLOGIST)
-                .stream()
-                .map(this::toResponseUsers)
-                .toList();
+    public Page<UserResponseDto> getPsychologists(Pageable pageable) {
+        return userRepository.findByRole(UserRole.PSYCHOLOGIST, pageable)
+                .map(this::toResponseUsers);
     }
 
-    public List<UserResponseDto> getAllClients() {
-        return userRepository.findByRole(UserRole.CLIENT)
-                .stream()
-                .map(this::toResponseUsers)
-                .toList();
+    public Page<UserResponseDto> getClients(Pageable pageable) {
+        return userRepository.findByRole(UserRole.CLIENT, pageable)
+                .map(this::toResponseUsers);
     }
     private UserResponseDto toResponseUsers(UserEntity userEntity){
         return new UserResponseDto(
