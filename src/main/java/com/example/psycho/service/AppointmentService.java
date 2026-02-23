@@ -11,6 +11,8 @@
     import jakarta.persistence.EntityNotFoundException;
     import jakarta.transaction.Transactional;
 
+    import org.springframework.data.domain.Page;
+    import org.springframework.data.domain.PageRequest;
     import org.springframework.stereotype.Service;
     import java.util.List;
 
@@ -38,14 +40,14 @@
         public AppointmentResponseDto createAppointment(AppointmentRequestDto request) {
 
             // 1. Ищем ГЛАВНОГО и ЕДИНСТВЕННОГО психолога в базе
-            List<UserEntity> psychologists = userRepository.findByRole(UserRole.PSYCHOLOGIST);
+            Page<UserEntity> psychologists = userRepository.findByRole(UserRole.PSYCHOLOGIST, PageRequest.of(0, 1));
 
             if (psychologists.isEmpty()) {
                 throw new RuntimeException("Ошибка сервера: В базе нет ни одного психолога!");
             }
 
             // Берем первого (он у нас теперь один — Доктор Стрэндж)
-            UserEntity mainPsychologist = psychologists.get(0);
+            UserEntity mainPsychologist = psychologists.getContent().get(0);
 
             // 2. ПРОВЕРКА НА ЗАНЯТОСТЬ
             boolean isBusy = appointmentRepository.existsByPsychologistIdAndTimeAndStatus(
