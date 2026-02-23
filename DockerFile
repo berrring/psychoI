@@ -1,26 +1,24 @@
 # ЭТАП 1: Сборка (Build)
-# Используем надежный образ Eclipse Temurin JDK 17
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Копируем код
-COPY . .
+# Копируем pom.xml и скачиваем зависимости (чтобы кэшировалось)
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Собираем (пропускаем тесты для скорости)
+# Копируем исходный код и собираем
+COPY src ./src
 RUN mvn clean package -DskipTests
 
 # ЭТАП 2: Запуск (Run)
-# Используем легкую версию JRE для запуска
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# !!! ВАЖНОЕ ИСПРАВЛЕНИЕ ТУТ !!!
-# Вместо конкретного имени (psycho...) используем звездочку *.jar
-# Это спасет от ошибки "File not found"
+# Копируем JAR файл (используем wildcard *, чтобы не зависеть от версии в имени)
 COPY --from=build /app/target/*.jar app.jar
 
-# Открываем порт
+# Порт, который слушает приложение
 EXPOSE 8080
 
-# Запускаем
+# Команда запуска
 ENTRYPOINT ["java", "-jar", "app.jar"]
