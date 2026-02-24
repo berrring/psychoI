@@ -55,7 +55,6 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    // ВОТ ЗДЕСЬ БЫЛА ОШИБКА. Исправлено под 0.12.5
     private Claims extractAllClaims(String token) {
         return Jwts.parser() // parserBuilder больше нет, есть parser()
                 .verifyWith(getSignInKey()) // setSigningKey заменили на verifyWith
