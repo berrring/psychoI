@@ -1,6 +1,5 @@
 package com.example.psycho.config;
 
-
 import com.example.psycho.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,21 +15,16 @@ public class ApplicationConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
-    // Конструктор вручную внедряет наш сервис
     public ApplicationConfig(CustomUserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider authProvider =
+                new DaoAuthenticationProvider(userDetailsService);
 
-        // Передаем наш сервис (теперь метод точно найдется)
-        authProvider.setUserDetailsService(userDetailsService);
-
-        // Устанавливаем кодировщик паролей
         authProvider.setPasswordEncoder(passwordEncoder());
-
         return authProvider;
     }
 
