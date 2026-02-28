@@ -1,32 +1,44 @@
-version: '3.8'
-
 services:
-  app:
-    build: .
-    container_name: psycho-backend
-    ports:
-      - "8080:8080"
+  postgres:
+    image: postgres:16-alpine
+    container_name: psycho-postgres
+    restart: unless-stopped
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/psycho_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-    depends_on:
-      - db
+      POSTGRES_DB: ${POSTGRES_DB:-psycho_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-psycho_db}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - psycho-network
 
-  db:
-    image: postgres:15-alpine
-    container_name: psycho-db
-    ports:
-      - "5432:5432"
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: psycho-backend:latest
+    container_name: psycho-backend
+    init: true
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      - POSTGRES_DB=psycho_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-psycho_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_JPA_DDL_AUTO: update
+      SPRING_FLYWAY_ENABLED: false
+      TZ: UTC
+    ports:
+      - "8080:8080"
     networks:
       - psycho-network
 
@@ -35,3 +47,4 @@ volumes:
 
 networks:
   psycho-network:
+    driver: bridge
