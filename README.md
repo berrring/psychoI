@@ -285,3 +285,12 @@ Backend is API-first and already ready for separate React/Next/mobile clients:
 
 If you connect another frontend, keep JWT in auth header:
 `Authorization: Bearer <token>`
+
+## 16. Production Deploy (Railway + Vercel)
+
+Recommended production setup:
+- Backend + PostgreSQL on Railway
+- Frontend on Vercel
+
+Full step-by-step guide:
+- `docs/DEPLOY_RAILWAY_VERCEL.md`

@@ -30,6 +30,13 @@ npm.cmd run dev
 npm run build
 ```
 
+## Deploy on Vercel
+- Import repository in Vercel
+- Set Root Directory to `frontend`
+- Set env variable:
+  - `VITE_API_BASE_URL=https://<your-railway-domain>/api/v1`
+- Deploy
+
 ## Environment
 ```bash
 VITE_API_BASE_URL=http://localhost:8080/api/v1
