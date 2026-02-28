@@ -76,25 +76,135 @@ public class DataInitializer implements CommandLineRunner {
         ensureMedicalService(imaging, "MRI_BASIC", "MRI diagnostics", 50, new BigDecimal("230.00"));
         ensureMedicalService(imaging, "ULTRASOUND_ADV", "Advanced ultrasound", 30, new BigDecimal("85.00"));
 
-        UserEntity admin = ensureUser(
+        UserEntity admin = ensureUser(new UserSeed(
                 "admin@clinic.local",
                 "Clinic Admin",
                 "Admin123!",
                 UserRole.ADMIN,
                 centralClinic,
+                "+1-212-555-1001",
+                "Healthcare platform operations",
                 null,
-                0
-        );
+                14,
+                "Leads clinic digital operations, compliance and service quality governance."
+        ));
 
-        ensureUser("reception@clinic.local", "Front Desk", "Reception123!", UserRole.RECEPTIONIST, centralClinic, null, 2);
-        ensureUser("doc.alex@clinic.local", "Dr. Alex Morgan", "Doctor123!", UserRole.DOCTOR, centralClinic, "Internal medicine", 12);
-        ensureUser("doc.sara@clinic.local", "Dr. Sara Bennett", "Doctor123!", UserRole.DOCTOR, centralClinic, "Cardiology", 9);
-        ensureUser("doc.mike@clinic.local", "Dr. Mike Rivera", "Doctor123!", UserRole.DOCTOR, riversideClinic, "Diagnostics", 7);
-        ensureUser("doc.emma@clinic.local", "Dr. Emma Clarke", "Doctor123!", UserRole.DOCTOR, riversideClinic, "Radiology", 8);
-        ensureUser("psy.julia@clinic.local", "Julia Holmes", "Doctor123!", UserRole.PSYCHOLOGIST, centralClinic, "Clinical psychology", 11);
+        ensureUser(new UserSeed(
+                "reception@clinic.local",
+                "Front Desk",
+                "Reception123!",
+                UserRole.RECEPTIONIST,
+                centralClinic,
+                "+1-212-555-1002",
+                "Patient coordination",
+                null,
+                6,
+                "Coordinates patient check-in, referrals, confirmations and administrative support."
+        ));
 
-        ensureUser("patient.demo@clinic.local", "Demo Patient", "Patient123!", UserRole.PATIENT, centralClinic, null, 0);
-        ensureUser("client.demo@clinic.local", "Demo Client", "Client123!", UserRole.CLIENT, centralClinic, null, 0);
+        ensureUser(new UserSeed(
+                "doc.alex@clinic.local",
+                "Dr. Alex Morgan",
+                "Doctor123!",
+                UserRole.DOCTOR,
+                centralClinic,
+                "+1-212-555-1101",
+                "Internal medicine",
+                "NY-IM-44718",
+                12,
+                "Specialist in internal medicine and preventive chronic disease management."
+        ));
+
+        ensureUser(new UserSeed(
+                "doc.sara@clinic.local",
+                "Dr. Sara Bennett",
+                "Doctor123!",
+                UserRole.DOCTOR,
+                centralClinic,
+                "+1-212-555-1102",
+                "Cardiology",
+                "NY-CARD-33892",
+                9,
+                "Cardiologist focused on risk screening, hypertension and integrated therapy planning."
+        ));
+
+        ensureUser(new UserSeed(
+                "doc.mike@clinic.local",
+                "Dr. Mike Rivera",
+                "Doctor123!",
+                UserRole.DOCTOR,
+                riversideClinic,
+                "+1-347-555-1103",
+                "Diagnostics",
+                "NY-DIAG-55217",
+                7,
+                "Leads diagnostics pathways for laboratory interpretation and pre-treatment assessment."
+        ));
+
+        ensureUser(new UserSeed(
+                "doc.emma@clinic.local",
+                "Dr. Emma Clarke",
+                "Doctor123!",
+                UserRole.DOCTOR,
+                riversideClinic,
+                "+1-347-555-1104",
+                "Radiology",
+                "NY-RAD-88124",
+                8,
+                "Radiologist with focus on MRI, CT and structured reporting standards."
+        ));
+
+        ensureUser(new UserSeed(
+                "psy.julia@clinic.local",
+                "Julia Holmes",
+                "Doctor123!",
+                UserRole.PSYCHOLOGIST,
+                centralClinic,
+                "+1-212-555-1201",
+                "Clinical psychology",
+                "NY-PSY-22460",
+                11,
+                "Clinical psychologist supporting anxiety, stress recovery and long-term therapeutic programs."
+        ));
+
+        ensureUser(new UserSeed(
+                "patient.demo@clinic.local",
+                "Demo Patient",
+                "Patient123!",
+                UserRole.PATIENT,
+                centralClinic,
+                "+1-917-555-2001",
+                null,
+                null,
+                0,
+                "Demo patient profile for booking, follow-up and personal appointment history tests."
+        ));
+
+        ensureUser(new UserSeed(
+                "client.demo@clinic.local",
+                "Demo Client",
+                "Client123!",
+                UserRole.CLIENT,
+                centralClinic,
+                "+1-917-555-2002",
+                null,
+                null,
+                0,
+                "Demo client account for public-to-private booking flow and self-service portal checks."
+        ));
+
+        ensureUser(new UserSeed(
+                "patient.olivia@clinic.local",
+                "Olivia Carter",
+                "Patient123!",
+                UserRole.PATIENT,
+                riversideClinic,
+                "+1-917-555-2003",
+                null,
+                null,
+                0,
+                "Seed profile used for appointment timeline and analytics examples."
+        ));
 
         seedKnowledgeLibrary(admin);
     }
@@ -285,26 +395,28 @@ public class DataInitializer implements CommandLineRunner {
         });
     }
 
-    private UserEntity ensureUser(String email,
-                                  String name,
-                                  String password,
-                                  UserRole role,
-                                  ClinicEntity clinic,
-                                  String specialization,
-                                  int yearsOfExperience) {
-        return userRepository.findByEmail(email).orElseGet(() -> {
-            UserEntity user = new UserEntity();
-            user.setEmail(email);
-            user.setName(name);
-            user.setPassword(passwordEncoder.encode(password));
-            user.setRole(role);
-            user.setClinic(clinic);
-            user.setSpecialization(specialization);
-            user.setYearsOfExperience(yearsOfExperience);
-            user.setActive(true);
-            user.setAbout(specialization != null ? "Specialist in " + specialization : "Clinic staff");
-            return userRepository.save(user);
-        });
+    private UserEntity ensureUser(UserSeed seed) {
+        Optional<UserEntity> existing = userRepository.findByEmail(seed.email());
+        UserEntity user = existing.orElseGet(UserEntity::new);
+
+        if (existing.isEmpty()) {
+            user.setEmail(seed.email());
+            user.setPassword(passwordEncoder.encode(seed.password()));
+        } else if (user.getPassword() == null || user.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(seed.password()));
+        }
+
+        user.setName(seed.name());
+        user.setRole(seed.role());
+        user.setClinic(seed.clinic());
+        user.setPhone(seed.phone());
+        user.setSpecialization(seed.specialization());
+        user.setLicenseNumber(seed.licenseNumber());
+        user.setYearsOfExperience(seed.yearsOfExperience());
+        user.setAbout(seed.about());
+        user.setActive(true);
+
+        return userRepository.save(user);
     }
 
     private void ensureArticle(UserEntity author,
@@ -337,5 +449,17 @@ public class DataInitializer implements CommandLineRunner {
                                String content,
                                KnowledgeCategory category,
                                String tags) {
+    }
+
+    private record UserSeed(String email,
+                            String name,
+                            String password,
+                            UserRole role,
+                            ClinicEntity clinic,
+                            String phone,
+                            String specialization,
+                            String licenseNumber,
+                            Integer yearsOfExperience,
+                            String about) {
     }
 }

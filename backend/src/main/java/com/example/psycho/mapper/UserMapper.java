@@ -21,6 +21,7 @@ public class UserMapper {
                 user.getRole(),
                 user.getPhone(),
                 user.getSpecialization(),
+                user.getLicenseNumber(),
                 user.getYearsOfExperience(),
                 user.getAbout(),
                 clinicId,

@@ -77,6 +77,9 @@ public class UserServiceImpl implements UserService {
         if (updateDto.specialization() != null) {
             user.setSpecialization(updateDto.specialization());
         }
+        if (updateDto.licenseNumber() != null) {
+            user.setLicenseNumber(updateDto.licenseNumber());
+        }
         if (updateDto.yearsOfExperience() != null) {
             user.setYearsOfExperience(updateDto.yearsOfExperience());
         }

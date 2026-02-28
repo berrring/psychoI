@@ -9,6 +9,7 @@ public record UserResponseDto(
         UserRole role,
         String phone,
         String specialization,
+        String licenseNumber,
         Integer yearsOfExperience,
         String about,
         Long clinicId,
