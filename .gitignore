@@ -6,6 +6,7 @@ backend/target/
 !**/src/test/**/target/
 frontend/node_modules/
 frontend/dist/
+frontend/*.tsbuildinfo
 
 ### STS ###
 .apt_generated
