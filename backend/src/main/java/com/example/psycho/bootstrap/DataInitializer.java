@@ -1,8 +1,6 @@
 package com.example.psycho.bootstrap;
 
 import com.example.psycho.model.*;
-import com.example.psycho.model.KnowledgeCategory;
-import com.example.psycho.model.UserRole;
 import com.example.psycho.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -38,55 +38,218 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        ClinicEntity clinic = ensureClinic();
-        DepartmentEntity therapy = ensureDepartment(clinic, "Therapy", "General outpatient therapy and follow-up");
-        DepartmentEntity diagnostics = ensureDepartment(clinic, "Diagnostics", "Functional and laboratory diagnostics");
+        ClinicEntity centralClinic = ensureClinic(
+                "NorthCare Central Clinic",
+                "New York",
+                "101 Main Street",
+                "+1-212-555-0181",
+                "central@clinic.local",
+                "Multidisciplinary outpatient clinic with diagnostics, therapy and mental health support"
+        );
 
-        ensureMedicalService(therapy, "THERAPY_CONSULT", "Therapist consultation", 30, new BigDecimal("50.00"));
-        ensureMedicalService(therapy, "CARDIO_SCREEN", "Cardiology screening", 45, new BigDecimal("90.00"));
-        ensureMedicalService(diagnostics, "BLOOD_PANEL", "Extended blood panel", 20, new BigDecimal("40.00"));
+        ClinicEntity riversideClinic = ensureClinic(
+                "NorthCare Riverside Clinic",
+                "Brooklyn",
+                "22 Riverside Avenue",
+                "+1-347-555-0175",
+                "riverside@clinic.local",
+                "Cardiology and advanced diagnostics center with day-case procedures"
+        );
 
-        UserEntity admin = ensureUser("admin@clinic.local", "Clinic Admin", "Admin123!", UserRole.ADMIN, clinic, null, 0);
-        ensureUser("reception@clinic.local", "Front Desk", "Reception123!", UserRole.RECEPTIONIST, clinic, null, 2);
-        ensureUser("doc.alex@clinic.local", "Dr. Alex Morgan", "Doctor123!", UserRole.DOCTOR, clinic, "Internal medicine", 12);
-        ensureUser("doc.sara@clinic.local", "Dr. Sara Bennett", "Doctor123!", UserRole.DOCTOR, clinic, "Cardiology", 9);
-        ensureUser("doc.mike@clinic.local", "Dr. Mike Rivera", "Doctor123!", UserRole.DOCTOR, clinic, "Diagnostics", 7);
-        ensureUser("patient.demo@clinic.local", "Demo Patient", "Patient123!", UserRole.PATIENT, clinic, null, 0);
+        DepartmentEntity therapy = ensureDepartment(centralClinic, "Therapy", "General outpatient therapy and follow-up");
+        DepartmentEntity diagnostics = ensureDepartment(centralClinic, "Diagnostics", "Functional and laboratory diagnostics");
+        DepartmentEntity mentalHealth = ensureDepartment(centralClinic, "Mental Health", "Psychology and psychiatry consultations");
+        DepartmentEntity rehab = ensureDepartment(centralClinic, "Rehabilitation", "Post-treatment recovery and wellness programs");
 
-        ensureArticle(admin,
-                "how-to-prepare-for-appointment",
-                "How to Prepare for a Clinic Appointment",
-                "A short checklist before visiting a doctor.",
-                "Bring your previous test results, medication list, and symptom timeline. Arrive 10-15 minutes early.",
-                KnowledgeCategory.PREVENTION,
-                "appointment,checklist,clinic");
+        DepartmentEntity cardiology = ensureDepartment(riversideClinic, "Cardiology", "Cardiovascular diagnostics and treatment");
+        DepartmentEntity imaging = ensureDepartment(riversideClinic, "Imaging", "MRI, CT and ultrasound diagnostics");
 
-        ensureArticle(admin,
-                "blood-pressure-basics",
-                "Blood Pressure Basics",
-                "Understand normal ranges and when to seek help.",
-                "A consistent blood pressure above 140/90 should be discussed with a physician for diagnosis and care plan.",
-                KnowledgeCategory.DIAGNOSTICS,
-                "pressure,cardiology,health");
+        ensureMedicalService(therapy, "THERAPY_CONSULT", "Therapist consultation", 30, new BigDecimal("65.00"));
+        ensureMedicalService(therapy, "ENDO_CHECK", "Endocrinology check-up", 40, new BigDecimal("95.00"));
+        ensureMedicalService(diagnostics, "BLOOD_PANEL", "Extended blood panel", 20, new BigDecimal("45.00"));
+        ensureMedicalService(diagnostics, "LIVER_SCREEN", "Liver function screening", 25, new BigDecimal("55.00"));
+        ensureMedicalService(mentalHealth, "PSYCH_INTAKE", "Psychological intake session", 50, new BigDecimal("90.00"));
+        ensureMedicalService(mentalHealth, "CBT_FOLLOWUP", "Cognitive therapy follow-up", 45, new BigDecimal("80.00"));
+        ensureMedicalService(rehab, "POST_OP_REHAB", "Post-operative rehabilitation", 60, new BigDecimal("110.00"));
+        ensureMedicalService(cardiology, "CARDIO_SCREEN", "Cardiology screening", 45, new BigDecimal("120.00"));
+        ensureMedicalService(cardiology, "ECG_STRESS", "Stress ECG", 35, new BigDecimal("105.00"));
+        ensureMedicalService(imaging, "MRI_BASIC", "MRI diagnostics", 50, new BigDecimal("230.00"));
+        ensureMedicalService(imaging, "ULTRASOUND_ADV", "Advanced ultrasound", 30, new BigDecimal("85.00"));
 
-        ensureArticle(admin,
-                "post-visit-follow-up",
-                "Post-Visit Follow-up Plan",
-                "What to do after your appointment.",
-                "Follow prescribed treatment, track symptoms daily, and schedule control visits according to doctor recommendations.",
-                KnowledgeCategory.REHABILITATION,
-                "follow-up,treatment,monitoring");
+        UserEntity admin = ensureUser(
+                "admin@clinic.local",
+                "Clinic Admin",
+                "Admin123!",
+                UserRole.ADMIN,
+                centralClinic,
+                null,
+                0
+        );
+
+        ensureUser("reception@clinic.local", "Front Desk", "Reception123!", UserRole.RECEPTIONIST, centralClinic, null, 2);
+        ensureUser("doc.alex@clinic.local", "Dr. Alex Morgan", "Doctor123!", UserRole.DOCTOR, centralClinic, "Internal medicine", 12);
+        ensureUser("doc.sara@clinic.local", "Dr. Sara Bennett", "Doctor123!", UserRole.DOCTOR, centralClinic, "Cardiology", 9);
+        ensureUser("doc.mike@clinic.local", "Dr. Mike Rivera", "Doctor123!", UserRole.DOCTOR, riversideClinic, "Diagnostics", 7);
+        ensureUser("doc.emma@clinic.local", "Dr. Emma Clarke", "Doctor123!", UserRole.DOCTOR, riversideClinic, "Radiology", 8);
+        ensureUser("psy.julia@clinic.local", "Julia Holmes", "Doctor123!", UserRole.PSYCHOLOGIST, centralClinic, "Clinical psychology", 11);
+
+        ensureUser("patient.demo@clinic.local", "Demo Patient", "Patient123!", UserRole.PATIENT, centralClinic, null, 0);
+        ensureUser("client.demo@clinic.local", "Demo Client", "Client123!", UserRole.CLIENT, centralClinic, null, 0);
+
+        seedKnowledgeLibrary(admin);
     }
 
-    private ClinicEntity ensureClinic() {
-        return clinicRepository.findAll().stream().findFirst().orElseGet(() -> {
+    private void seedKnowledgeLibrary(UserEntity author) {
+        List<ArticleSeed> seeds = List.of(
+                new ArticleSeed(
+                        "appointment-checklist-2026",
+                        "Appointment Checklist for First-Time Visitors",
+                        "What to prepare before coming to the clinic for consultation.",
+                        "Bring your previous records, medication list, and key symptoms timeline. Try to arrive 10-15 minutes early to complete intake and verify contact information.",
+                        KnowledgeCategory.PREVENTION,
+                        "appointment,checklist,intake"
+                ),
+                new ArticleSeed(
+                        "hypertension-warning-signs",
+                        "Hypertension Warning Signs and Monitoring",
+                        "How to track blood pressure and when to seek a doctor.",
+                        "Persistent blood pressure readings above 140/90 should be reviewed by a doctor. Home monitoring twice daily and lifestyle tracking improves treatment precision.",
+                        KnowledgeCategory.DISEASES,
+                        "hypertension,cardiology,monitoring"
+                ),
+                new ArticleSeed(
+                        "understanding-blood-tests",
+                        "Understanding Common Blood Test Panels",
+                        "A simple guide to interpreting routine lab checks.",
+                        "Blood panel values should be interpreted in context of symptoms and medical history. Avoid self-diagnosis and review abnormal values with your clinician.",
+                        KnowledgeCategory.DIAGNOSTICS,
+                        "lab,blood-test,diagnostics"
+                ),
+                new ArticleSeed(
+                        "mri-preparation-guide",
+                        "MRI Preparation Guide",
+                        "Preparation steps before MRI diagnostics.",
+                        "Inform staff about implants, allergies and claustrophobia. Remove metal accessories and follow food instructions if contrast imaging is planned.",
+                        KnowledgeCategory.DIAGNOSTICS,
+                        "mri,imaging,diagnostics"
+                ),
+                new ArticleSeed(
+                        "cardio-risk-screening",
+                        "Cardiovascular Risk Screening",
+                        "Who should schedule a preventive cardiology check.",
+                        "Patients with family history, smoking, diabetes or obesity benefit from early cardiology screening. Risk-based prevention can reduce long-term complications.",
+                        KnowledgeCategory.PREVENTION,
+                        "cardiology,screening,prevention"
+                ),
+                new ArticleSeed(
+                        "mental-health-first-visit",
+                        "What to Expect at a Mental Health Intake",
+                        "How first psychological or psychiatric visits are structured.",
+                        "First intake usually includes symptom history, stress factors and sleep patterns. Treatment may combine counseling, behavioral methods and regular follow-up.",
+                        KnowledgeCategory.MENTAL_HEALTH,
+                        "mental-health,psychology,intake"
+                ),
+                new ArticleSeed(
+                        "sleep-hygiene-basics",
+                        "Sleep Hygiene Basics for Better Recovery",
+                        "Daily routines that improve sleep quality and resilience.",
+                        "Consistent sleep schedule, reduced evening screen time and lower caffeine intake after midday can improve rest quality and recovery outcomes.",
+                        KnowledgeCategory.MENTAL_HEALTH,
+                        "sleep,recovery,wellness"
+                ),
+                new ArticleSeed(
+                        "post-visit-follow-up-plan",
+                        "Post-Visit Follow-Up Plan",
+                        "Steps to take after consultation or procedure.",
+                        "Follow prescribed treatment, track symptoms daily and attend control visits as recommended. Use reminders for medication and lab follow-up windows.",
+                        KnowledgeCategory.REHABILITATION,
+                        "follow-up,treatment,monitoring"
+                ),
+                new ArticleSeed(
+                        "post-surgery-rehab-phases",
+                        "Post-Surgery Rehabilitation Phases",
+                        "How structured rehab supports safe return to activity.",
+                        "Rehabilitation usually progresses from pain control and mobility recovery to strength rebuilding and long-term prevention of relapse.",
+                        KnowledgeCategory.REHABILITATION,
+                        "rehabilitation,post-op,physiotherapy"
+                ),
+                new ArticleSeed(
+                        "nutrition-for-heart-health",
+                        "Nutrition Plan for Heart Health",
+                        "Core dietary rules for cardiology patients.",
+                        "A diet focused on vegetables, whole grains, fish, legumes and reduced sodium helps blood pressure and lipid control. Individual adjustments should be discussed with clinicians.",
+                        KnowledgeCategory.NUTRITION,
+                        "nutrition,heart,cardiology"
+                ),
+                new ArticleSeed(
+                        "faq-can-i-change-appointment",
+                        "Can I Reschedule My Appointment?",
+                        "FAQ on changing scheduled visits.",
+                        "Yes. Contact reception or use your client account to request another slot. Early rescheduling improves availability and continuity of care.",
+                        KnowledgeCategory.FAQ,
+                        "faq,appointments,reschedule"
+                ),
+                new ArticleSeed(
+                        "faq-what-to-bring-for-lab",
+                        "What Should I Bring for Lab Diagnostics?",
+                        "FAQ for laboratory and imaging visits.",
+                        "Bring identification, referral information and previous results if available. Follow fasting instructions when required for accurate interpretation.",
+                        KnowledgeCategory.FAQ,
+                        "faq,lab,diagnostics"
+                ),
+                new ArticleSeed(
+                        "news-riverside-imaging-launch",
+                        "New Imaging Unit Opened at Riverside Clinic",
+                        "NorthCare launched an expanded MRI and ultrasound unit in Brooklyn.",
+                        "Our Riverside location now provides faster diagnostics with extended evening shifts and consultant-led interpretation.",
+                        KnowledgeCategory.NEWS,
+                        "news,imaging,clinic-update"
+                ),
+                new ArticleSeed(
+                        "news-online-booking-update",
+                        "Online Booking Update for Client Portal",
+                        "Client application now supports faster appointment booking with specialist filters.",
+                        "Patients can now view doctor specialization details, available clinics and upcoming visits in one interface.",
+                        KnowledgeCategory.NEWS,
+                        "news,booking,client-portal"
+                ),
+                new ArticleSeed(
+                        "news-cardiology-program-2026",
+                        "Cardiology Prevention Program 2026",
+                        "NorthCare started a preventive program for high-risk cardiovascular patients.",
+                        "The new pathway combines lab tracking, imaging, nutrition counseling and coordinated follow-up with cardiology specialists.",
+                        KnowledgeCategory.NEWS,
+                        "news,cardiology,prevention"
+                ),
+                new ArticleSeed(
+                        "news-mental-health-hotline",
+                        "24/7 Mental Health Support Line Expanded",
+                        "Patient support center now includes dedicated mental health triage assistance.",
+                        "Licensed specialists can help route urgent mental health concerns to appropriate care teams and appointments.",
+                        KnowledgeCategory.NEWS,
+                        "news,mental-health,support"
+                )
+        );
+
+        for (ArticleSeed seed : seeds) {
+            ensureArticle(author, seed.slug(), seed.title(), seed.summary(), seed.content(), seed.category(), seed.tags());
+        }
+    }
+
+    private ClinicEntity ensureClinic(String name,
+                                      String city,
+                                      String address,
+                                      String phone,
+                                      String email,
+                                      String description) {
+        return clinicRepository.findByName(name).orElseGet(() -> {
             ClinicEntity clinic = new ClinicEntity();
-            clinic.setName("Psycho Health Clinic");
-            clinic.setCity("New York");
-            clinic.setAddress("101 Main Street");
-            clinic.setPhone("+1-212-555-0181");
-            clinic.setEmail("info@clinic.local");
-            clinic.setDescription("Multidisciplinary outpatient clinic for adult and family care");
+            clinic.setName(name);
+            clinic.setCity(city);
+            clinic.setAddress(address);
+            clinic.setPhone(phone);
+            clinic.setEmail(email);
+            clinic.setDescription(description);
             clinic.setActive(true);
             return clinicRepository.save(clinic);
         });
@@ -163,9 +326,16 @@ public class DataInitializer implements CommandLineRunner {
         article.setCategory(category);
         article.setTags(tags);
         article.setPublished(true);
-        article.setPublishedAt(java.time.LocalDateTime.now());
+        article.setPublishedAt(LocalDateTime.now());
         article.setAuthor(author);
         knowledgeArticleRepository.save(article);
     }
-}
 
+    private record ArticleSeed(String slug,
+                               String title,
+                               String summary,
+                               String content,
+                               KnowledgeCategory category,
+                               String tags) {
+    }
+}

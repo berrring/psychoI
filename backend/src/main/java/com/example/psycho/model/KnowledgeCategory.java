@@ -8,6 +8,7 @@ public enum KnowledgeCategory {
     REHABILITATION,
     NUTRITION,
     MENTAL_HEALTH,
-    FAQ
+    FAQ,
+    NEWS
 }
 
