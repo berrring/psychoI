@@ -24,6 +24,10 @@ export class HttpError extends Error {
   }
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function buildUrl(path: string, query?: Record<string, string | number | undefined | null>) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = new URL(`${API_BASE_URL}${normalizedPath}`);
@@ -53,6 +57,8 @@ export async function apiRequest<T>(
   token?: string,
   query?: Record<string, string | number | undefined | null>
 ): Promise<T> {
+  const method = (init.method ?? "GET").toUpperCase();
+  const maxRetries = method === "GET" ? 1 : 0;
   const headers = new Headers(init.headers ?? {});
   if (!headers.has("Content-Type") && init.body) {
     headers.set("Content-Type", "application/json");
@@ -61,23 +67,39 @@ export async function apiRequest<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(buildUrl(path, query), {
-    ...init,
-    headers
-  });
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      const response = await fetch(buildUrl(path, query), {
+        ...init,
+        headers
+      });
 
-  const body = await parseBody(response);
+      const body = await parseBody(response);
 
-  if (!response.ok) {
-    const apiError = body && typeof body === "object" ? (body as ApiError) : undefined;
-    throw new HttpError(
-      apiError?.message ?? `Request failed with status ${response.status}`,
-      response.status,
-      apiError
-    );
+      if (!response.ok) {
+        const apiError = body && typeof body === "object" ? (body as ApiError) : undefined;
+        throw new HttpError(
+          apiError?.message ?? `Request failed with status ${response.status}`,
+          response.status,
+          apiError
+        );
+      }
+
+      return body as T;
+    } catch (error) {
+      const retryable =
+        attempt < maxRetries &&
+        ((error instanceof HttpError && error.status >= 500) || error instanceof TypeError);
+
+      if (retryable) {
+        await sleep(700);
+        continue;
+      }
+      throw error;
+    }
   }
 
-  return body as T;
+  throw new Error("Unexpected request state");
 }
 
 export function toErrorMessage(error: unknown): string {

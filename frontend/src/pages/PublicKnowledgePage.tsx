@@ -54,6 +54,7 @@ export function PublicKnowledgePage() {
   const [news, setNews] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
   const [newsLoading, setNewsLoading] = useState(false);
+  const [newsLoadFailed, setNewsLoadFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export function PublicKnowledgePage() {
     let cancelled = false;
     async function loadNews() {
       setNewsLoading(true);
+      setNewsLoadFailed(false);
       try {
         const data = await apiRequest<PageResponse<Article>>(
           "/public/knowledge/articles",
@@ -102,8 +104,8 @@ export function PublicKnowledgePage() {
           }
         );
         if (!cancelled) setNews(data.content);
-      } catch (e) {
-        if (!cancelled) setError(toErrorMessage(e));
+      } catch {
+        if (!cancelled) setNewsLoadFailed(true);
       } finally {
         if (!cancelled) setNewsLoading(false);
       }
@@ -237,6 +239,7 @@ export function PublicKnowledgePage() {
           <p className="muted">Latest announcements from our medical network.</p>
         </div>
         {newsLoading && <p className="muted">Loading news...</p>}
+        {newsLoadFailed && <p className="muted">News feed is temporarily unavailable.</p>}
         <div className="card-grid">
           {news.map((article) => (
             <article key={article.id} className="article-card article-card-rich">
