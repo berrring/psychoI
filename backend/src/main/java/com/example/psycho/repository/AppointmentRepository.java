@@ -19,6 +19,8 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
 
     List<AppointmentEntity> findByClinic_Id(Long clinicId);
 
+    List<AppointmentEntity> findByClinic_IdOrderByTimeAsc(Long clinicId);
+
     boolean existsByPsychologist_IdAndTimeAndStatusIn(Long psychologistId, LocalDateTime time, Collection<AppointmentStatus> statuses);
 
     List<AppointmentEntity> findByPsychologist_IdAndTimeAndStatusIn(

@@ -82,5 +82,11 @@ public class AppointmentController {
         }
         return ResponseEntity.ok(appointmentService.getDoctorCalendar(doctorId, from, to));
     }
+
+    @GetMapping("/clinics/{clinicId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN','RECEPTIONIST')")
+    public ResponseEntity<List<AppointmentResponseDto>> clinicSchedule(@PathVariable Long clinicId) {
+        return ResponseEntity.ok(appointmentService.findByClinicId(clinicId));
+    }
 }
 

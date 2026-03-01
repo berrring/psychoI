@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { apiRequest, toErrorMessage } from "../api";
 import { useAuth } from "../auth";
-import type { Appointment, Clinic, PageResponse, UserInfo } from "../types";
+import type { Appointment, Clinic, PageResponse, PublicDoctorSummary } from "../types";
 
 function toApiDateTime(value: string): string {
   if (!value) return value;
@@ -14,7 +15,8 @@ function formatDateTime(value: string): string {
 
 export function ClientWorkspacePage() {
   const { token, session } = useAuth();
-  const [doctors, setDoctors] = useState<UserInfo[]>([]);
+  const location = useLocation();
+  const [doctors, setDoctors] = useState<PublicDoctorSummary[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,6 +30,11 @@ export function ClientWorkspacePage() {
     complaint: ""
   });
 
+  const selectedDoctor = useMemo(
+    () => doctors.find((doctor) => doctor.id === form.doctorId) ?? null,
+    [doctors, form.doctorId]
+  );
+
   const upcomingAppointments = useMemo(
     () =>
       appointments
@@ -40,7 +47,10 @@ export function ClientWorkspacePage() {
   async function loadWorkspace() {
     if (!token || !session) return;
     const [doctorData, clinicData, appointmentData] = await Promise.all([
-      apiRequest<PageResponse<UserInfo>>("/users/doctors", { method: "GET" }, token, { page: 0, size: 12 }),
+      apiRequest<PageResponse<PublicDoctorSummary>>("/public/doctors", { method: "GET" }, undefined, {
+        page: 0,
+        size: 24
+      }),
       apiRequest<Clinic[]>("/clinics", { method: "GET" }, token),
       apiRequest<PageResponse<Appointment>>(
         "/appointments",
@@ -79,9 +89,19 @@ export function ClientWorkspacePage() {
     };
   }, [token, session?.userId]);
 
+  useEffect(() => {
+    const state = location.state as { selectedDoctorId?: number } | null;
+    if (!state?.selectedDoctorId) return;
+    setForm((current) => ({ ...current, doctorId: state.selectedDoctorId ?? current.doctorId }));
+  }, [location.state]);
+
   async function createBooking(event: FormEvent) {
     event.preventDefault();
     if (!token || !session) return;
+    if (!form.doctorId) {
+      setError("Select a doctor profile before booking.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -116,7 +136,7 @@ export function ClientWorkspacePage() {
   return (
     <section className="workspace">
       <div className="workspace-hero workspace-hero-client">
-        <p className="eyebrow">Client App</p>
+        <p className="eyebrow">Patient App</p>
         <h2>Your Care Journey</h2>
         <p>Book appointments, choose specialists and track upcoming visits from one workspace.</p>
       </div>
@@ -129,21 +149,17 @@ export function ClientWorkspacePage() {
           <h3>Book Appointment</h3>
           <p className="muted">Endpoint: <code>/api/v1/appointments</code></p>
           <form className="form-grid" onSubmit={createBooking}>
-            <label>
-              Doctor
-              <select
-                value={form.doctorId || ""}
-                onChange={(e) => setForm((value) => ({ ...value, doctorId: Number(e.target.value) }))}
-                required
-              >
-                <option value="">Select doctor</option>
-                {doctors.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    {doctor.name} ({doctor.specialization || doctor.role})
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="hint-box">
+              <h3>Selected Doctor</h3>
+              {selectedDoctor ? (
+                <p className="muted">
+                  {selectedDoctor.fullName} ({selectedDoctor.specialization || "General practice"})
+                </p>
+              ) : (
+                <p className="muted">Doctor is not selected yet.</p>
+              )}
+              <Link to="/doctors?returnTo=/patient-app">Open doctor directory</Link>
+            </div>
 
             <label>
               Clinic
@@ -191,9 +207,10 @@ export function ClientWorkspacePage() {
           <ul className="doctor-grid">
             {doctors.map((doctor) => (
               <li key={doctor.id}>
-                <strong>{doctor.name}</strong>
+                <strong>{doctor.fullName}</strong>
                 <span>{doctor.specialization || "General practice"}</span>
-                <small>{doctor.yearsOfExperience ?? 0} years experience</small>
+                <small>{doctor.experienceYears ?? 0} years experience</small>
+                <Link to={`/doctors/${doctor.id}?returnTo=/patient-app`}>View details</Link>
               </li>
             ))}
           </ul>

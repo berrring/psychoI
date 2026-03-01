@@ -20,5 +20,7 @@ public interface AppointmentService {
 
     Page<AppointmentResponseDto> findByDoctorId(Long doctorId, Pageable pageable);
 
+    List<AppointmentResponseDto> findByClinicId(Long clinicId);
+
     List<AppointmentResponseDto> getDoctorCalendar(Long doctorId, LocalDate from, LocalDate to);
 }

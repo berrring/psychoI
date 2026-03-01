@@ -100,6 +100,31 @@ export interface UserInfo {
   active: boolean;
 }
 
+export interface PublicDoctorSummary {
+  id: number;
+  fullName: string;
+  specialization?: string;
+  clinic?: string;
+  shortBio?: string;
+  avatarUrl?: string | null;
+  experienceYears?: number;
+  tags?: string[];
+}
+
+export interface PublicDoctorDetails {
+  id: number;
+  fullName: string;
+  specialization?: string;
+  clinic?: string;
+  clinicCity?: string;
+  clinicAddress?: string;
+  shortBio?: string;
+  fullBio?: string;
+  avatarUrl?: string | null;
+  experienceYears?: number;
+  tags?: string[];
+}
+
 export interface Appointment {
   id: number;
   patientId: number;

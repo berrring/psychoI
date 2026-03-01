@@ -184,13 +184,13 @@ public class DataInitializer implements CommandLineRunner {
                 "client.demo@clinic.local",
                 "Demo Client",
                 "Client123!",
-                UserRole.CLIENT,
+                UserRole.PATIENT,
                 centralClinic,
                 "+77-717-555-2002",
                 null,
                 null,
                 0,
-                "Demo client account for public-to-private booking flow and self-service portal checks."
+                "Legacy client account normalized to patient portal behavior for booking and self-service checks."
         ));
 
         ensureUser(new UserSeed(

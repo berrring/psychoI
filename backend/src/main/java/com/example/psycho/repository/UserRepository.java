@@ -27,9 +27,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             where u.role in :roles
               and u.active = true
               and (
-                    :query is null
-                    or trim(:query) = ''
+                    :query = ''
                     or lower(u.name) like lower(concat('%', :query, '%'))
+                    or lower(u.email) like lower(concat('%', :query, '%'))
                     or lower(coalesce(u.specialization, '')) like lower(concat('%', :query, '%'))
                   )
             """)
@@ -38,5 +38,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             @Param("query") String query,
             Pageable pageable
     );
+
+    Optional<UserEntity> findByIdAndRoleInAndActiveTrue(Long id, Collection<UserRole> roles);
 }
 

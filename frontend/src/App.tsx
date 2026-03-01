@@ -10,11 +10,14 @@ import { AuditPage } from "./pages/AuditPage";
 import { ClientWorkspacePage } from "./pages/ClientWorkspacePage";
 import { ClinicsPage } from "./pages/ClinicsPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { DoctorDetailsPage } from "./pages/DoctorDetailsPage";
+import { DoctorsDirectoryPage } from "./pages/DoctorsDirectoryPage";
 import { DoctorWorkspacePage } from "./pages/DoctorWorkspacePage";
 import { EventsPage } from "./pages/EventsPage";
 import { KnowledgeAdminPage } from "./pages/KnowledgeAdminPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PublicKnowledgePage } from "./pages/PublicKnowledgePage";
+import { ReceptionWorkspacePage } from "./pages/ReceptionWorkspacePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { UsersPage } from "./pages/UsersPage";
 import { getWorkspacePath } from "./role";
@@ -53,11 +56,22 @@ export default function App() {
         />
 
         <Route
-          path="/client-app"
+          path="/patient-app"
           element={
             <ProtectedRoute>
               <RoleRoute allowedRoles={["PATIENT", "CLIENT"]}>
                 <ClientWorkspacePage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/client-app" element={<Navigate to="/patient-app" replace />} />
+        <Route
+          path="/reception-app"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={["RECEPTIONIST"]}>
+                <ReceptionWorkspacePage />
               </RoleRoute>
             </ProtectedRoute>
           }
@@ -104,7 +118,29 @@ export default function App() {
           path="/users"
           element={
             <ProtectedRoute>
-              <UsersPage />
+              <RoleRoute allowedRoles={["ADMIN", "RECEPTIONIST", "DOCTOR", "PSYCHOLOGIST"]}>
+                <UsersPage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctors"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={["PATIENT", "CLIENT"]}>
+                <DoctorsDirectoryPage />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doctors/:id"
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={["PATIENT", "CLIENT"]}>
+                <DoctorDetailsPage />
+              </RoleRoute>
             </ProtectedRoute>
           }
         />

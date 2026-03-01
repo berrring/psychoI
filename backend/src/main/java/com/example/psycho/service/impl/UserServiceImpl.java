@@ -52,7 +52,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public Page<UserResponseDto> getDoctors(String query, Pageable pageable) {
-        return userRepository.searchActiveByRolesAndQuery(DOCTOR_ROLES, query, pageable)
+        String normalizedQuery = query == null ? "" : query.trim();
+        return userRepository.searchActiveByRolesAndQuery(DOCTOR_ROLES, normalizedQuery, pageable)
                 .map(userMapper::toDto);
     }
 

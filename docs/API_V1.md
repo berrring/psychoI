@@ -13,6 +13,10 @@ Base URL: `/api/v1`
 - `PATCH /users/{id}`
 - `PATCH /users/{id}/change-password`
 
+## Public Doctors
+- `GET /public/doctors?query=&page=&size=`
+- `GET /public/doctors/{id}`
+
 ## Clinics
 - `GET /clinics`
 - `GET /clinics/{id}`
@@ -31,6 +35,7 @@ Base URL: `/api/v1`
 - `GET /appointments?patientId=&page=&size=`
 - `GET /appointments?doctorId=&page=&size=`
 - `GET /appointments/calendar/doctors/{doctorId}?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /appointments/clinics/{clinicId}` (ADMIN/RECEPTIONIST)
 
 ## Appointment Events (Timeline)
 - `POST /appointments/{appointmentId}/events`

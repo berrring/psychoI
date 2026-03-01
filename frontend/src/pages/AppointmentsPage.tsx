@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { apiRequest, toErrorMessage } from "../api";
 import { useAuth } from "../auth";
 import type {
@@ -8,6 +9,7 @@ import type {
   Department,
   MedicalService,
   PageResponse,
+  PublicDoctorSummary,
   UserInfo
 } from "../types";
 
@@ -28,6 +30,7 @@ function withSeconds(value: string) {
 
 export function AppointmentsPage() {
   const { token, session, hasRole } = useAuth();
+  const location = useLocation();
 
   const [doctors, setDoctors] = useState<UserInfo[]>([]);
   const [patients, setPatients] = useState<UserInfo[]>([]);
@@ -66,6 +69,7 @@ export function AppointmentsPage() {
     () => hasRole("ADMIN", "RECEPTIONIST", "DOCTOR", "PSYCHOLOGIST"),
     [hasRole]
   );
+  const isPatientLike = useMemo(() => hasRole("PATIENT", "CLIENT"), [hasRole]);
 
   useEffect(() => {
     if (!session) return;
@@ -77,13 +81,34 @@ export function AppointmentsPage() {
 
   async function loadReferenceData() {
     if (!token) return;
-    const doctorResp = await apiRequest<PageResponse<UserInfo>>(
-      "/users/doctors",
-      { method: "GET" },
-      token,
-      { page: 0, size: 100 }
-    );
-    setDoctors(doctorResp.content);
+    if (isPatientLike) {
+      const doctorResp = await apiRequest<PageResponse<PublicDoctorSummary>>(
+        "/public/doctors",
+        { method: "GET" },
+        undefined,
+        { page: 0, size: 100 }
+      );
+      setDoctors(
+        doctorResp.content.map((doctor) => ({
+          id: doctor.id,
+          name: doctor.fullName,
+          email: "",
+          role: "DOCTOR",
+          specialization: doctor.specialization,
+          yearsOfExperience: doctor.experienceYears,
+          clinicName: doctor.clinic,
+          active: true
+        }))
+      );
+    } else {
+      const doctorResp = await apiRequest<PageResponse<UserInfo>>(
+        "/users/doctors",
+        { method: "GET" },
+        token,
+        { page: 0, size: 100 }
+      );
+      setDoctors(doctorResp.content);
+    }
 
     const clinicResp = await apiRequest<Clinic[]>("/clinics", { method: "GET" }, token);
     setClinics(clinicResp);
@@ -104,6 +129,12 @@ export function AppointmentsPage() {
   }
 
   useEffect(() => {
+    const state = location.state as { selectedDoctorId?: number } | null;
+    if (!state?.selectedDoctorId) return;
+    setForm((current) => ({ ...current, doctorId: state.selectedDoctorId ?? current.doctorId }));
+  }, [location.state]);
+
+  useEffect(() => {
     let cancelled = false;
     async function init() {
       if (!token) return;
@@ -121,7 +152,7 @@ export function AppointmentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, canSelectAnyPatient]);
+  }, [token, canSelectAnyPatient, isPatientLike]);
 
   useEffect(() => {
     let cancelled = false;
@@ -302,11 +333,14 @@ export function AppointmentsPage() {
                 <option value="">Select doctor</option>
                 {doctors.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.name} ({d.specialization || d.role})
+                    {d.name} ({d.specialization || "Doctor"})
                   </option>
                 ))}
               </select>
             </label>
+            {isPatientLike && (
+              <Link to="/doctors?returnTo=/appointments">Open doctor details before selection</Link>
+            )}
 
             <label>
               Clinic

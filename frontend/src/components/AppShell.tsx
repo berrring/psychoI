@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth";
-import { isClientRole, isDoctorRole } from "../role";
+import { isDoctorRole, isPatientRole } from "../role";
 import type { UserRole } from "../types";
 
 interface NavItem {
@@ -31,10 +31,19 @@ function getHeaderLinks(isAuthenticated: boolean, role: UserRole | undefined): N
     ];
   }
 
-  if (isClientRole(role)) {
+  if (role === "RECEPTIONIST") {
     return [
-      { to: "/client-app", label: "Client App" },
-      { to: "/users", label: "Doctors" },
+      { to: "/reception-app", label: "Reception App" },
+      { to: "/appointments", label: "Appointments" },
+      { to: "/users", label: "People" },
+      { to: "/dashboard", label: "Dashboard" }
+    ];
+  }
+
+  if (isPatientRole(role)) {
+    return [
+      { to: "/patient-app", label: "Patient App" },
+      { to: "/doctors", label: "Doctors" },
       { to: "/appointments", label: "Booking" },
       { to: "/", label: "Health Library" }
     ];
@@ -67,11 +76,21 @@ function getPortalLinks(role: UserRole | undefined): NavItem[] {
     ];
   }
 
-  if (isClientRole(role)) {
+  if (role === "RECEPTIONIST") {
     return [
-      { to: "/client-app", label: "Client App" },
+      { to: "/reception-app", label: "Reception App" },
+      { to: "/appointments", label: "Appointments" },
+      { to: "/users", label: "People" },
+      { to: "/clinics", label: "Clinics" },
+      { to: "/dashboard", label: "Dashboard" }
+    ];
+  }
+
+  if (isPatientRole(role)) {
+    return [
+      { to: "/patient-app", label: "Patient App" },
       { to: "/appointments", label: "My Bookings" },
-      { to: "/users", label: "Doctor Directory" }
+      { to: "/doctors", label: "Doctor Directory" }
     ];
   }
 
@@ -186,10 +205,10 @@ export function AppShell() {
           </section>
           <section className="footer-col">
             <h4>Patient Services</h4>
-            <NavLink to="/client-app" className="footer-link">
-              Client Application
+            <NavLink to="/patient-app" className="footer-link">
+              Patient Application
             </NavLink>
-            <NavLink to="/users" className="footer-link">
+            <NavLink to="/doctors" className="footer-link">
               Doctor Directory
             </NavLink>
             <NavLink to="/" className="footer-link">

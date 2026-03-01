@@ -17,7 +17,7 @@ Production-style clinic platform monorepo with a Spring Boot backend and React f
 Backend is a role-based API for clinic operations with unified domain model:
 - authentication and JWT sessions
 - clinic structure (clinics, departments, services)
-- users (admin, doctor, psychologist, receptionist, patient, client)
+- users (admin, doctor, psychologist, receptionist, patient, legacy client alias)
 - appointments and status lifecycle
 - appointment event timeline
 - audit history
@@ -58,6 +58,7 @@ Main entities:
 
 Migration file:
 - `backend/src/main/resources/db/migration/V1__init_clinic_schema.sql`
+- `backend/src/main/resources/db/migration/V2__normalize_client_role_to_patient.sql`
 
 ### Knowledge Categories
 Supported categories now include:
@@ -84,7 +85,12 @@ Roles:
 Examples:
 - doctors/psychologists can manage appointments and clinical content
 - admin has broad operational access (dashboard, audit, content, users)
+- receptionist has dedicated front-desk workspace and schedule operations
 - patient/client can browse public info and book/view own appointments
+
+Current business policy:
+- `CLIENT` is treated as legacy compatibility role and mapped to patient-like behavior in UI and RBAC flows
+- Flyway migration `V2` normalizes existing DB records `CLIENT -> PATIENT`
 
 ## 6. Seeded Special Users (Detailed)
 
@@ -92,16 +98,16 @@ Examples:
 
 | Role | Email | Password | Clinic | Phone | Specialization | License |
 |---|---|---|---|---|---|---|
-| ADMIN | `admin@clinic.local` | `Admin123!` | NorthCare Central Clinic | `+1-212-555-1001` | Healthcare platform operations | - |
-| RECEPTIONIST | `reception@clinic.local` | `Reception123!` | NorthCare Central Clinic | `+1-212-555-1002` | Patient coordination | - |
-| DOCTOR | `doc.alex@clinic.local` | `Doctor123!` | NorthCare Central Clinic | `+1-212-555-1101` | Internal medicine | `NY-IM-44718` |
-| DOCTOR | `doc.sara@clinic.local` | `Doctor123!` | NorthCare Central Clinic | `+1-212-555-1102` | Cardiology | `NY-CARD-33892` |
-| DOCTOR | `doc.mike@clinic.local` | `Doctor123!` | NorthCare Riverside Clinic | `+1-347-555-1103` | Diagnostics | `NY-DIAG-55217` |
-| DOCTOR | `doc.emma@clinic.local` | `Doctor123!` | NorthCare Riverside Clinic | `+1-347-555-1104` | Radiology | `NY-RAD-88124` |
-| PSYCHOLOGIST | `psy.julia@clinic.local` | `Doctor123!` | NorthCare Central Clinic | `+1-212-555-1201` | Clinical psychology | `NY-PSY-22460` |
-| PATIENT | `patient.demo@clinic.local` | `Patient123!` | NorthCare Central Clinic | `+1-917-555-2001` | - | - |
-| CLIENT | `client.demo@clinic.local` | `Client123!` | NorthCare Central Clinic | `+1-917-555-2002` | - | - |
-| PATIENT | `patient.olivia@clinic.local` | `Patient123!` | NorthCare Riverside Clinic | `+1-917-555-2003` | - | - |
+| ADMIN | `admin@clinic.local` | `Admin123!` | Bering Central Clinic | `+77-717-555-1001` | Healthcare platform operations | - |
+| RECEPTIONIST | `reception@clinic.local` | `Reception123!` | Bering Central Clinic | `+77-717-555-1002` | Patient coordination | - |
+| DOCTOR | `doc.alex@clinic.local` | `Doctor123!` | Bering Central Clinic | `+77-717-555-1101` | Internal medicine | `NY-IM-44718` |
+| DOCTOR | `doc.sara@clinic.local` | `Doctor123!` | Bering Central Clinic | `+77-717-555-1102` | Cardiology | `NY-CARD-33892` |
+| DOCTOR | `doc.mike@clinic.local` | `Doctor123!` | Bering Arsenal Clinic | `+77-717-555-1103` | Diagnostics | `NY-DIAG-55217` |
+| DOCTOR | `doc.emma@clinic.local` | `Doctor123!` | Bering Arsenal Clinic | `+77-717-555-1104` | Radiology | `NY-RAD-88124` |
+| PSYCHOLOGIST | `psy.julia@clinic.local` | `Doctor123!` | Bering Central Clinic | `+77-717-555-1201` | Clinical psychology | `NY-PSY-22460` |
+| PATIENT | `patient.demo@clinic.local` | `Patient123!` | Bering Central Clinic | `+77-717-555-2001` | - | - |
+| PATIENT | `client.demo@clinic.local` | `Client123!` | Bering Central Clinic | `+77-717-555-2002` | - | - |
+| PATIENT | `patient.olivia@clinic.local` | `Patient123!` | Bering Arsenal Clinic | `+77-717-555-2003` | - | - |
 
 Seed behavior:
 - users are upserted by email
@@ -111,8 +117,8 @@ Seed behavior:
 ## 7. Seeded Clinic Data
 
 ### Clinics
-- NorthCare Central Clinic (New York)
-- NorthCare Riverside Clinic (Brooklyn)
+- Bering Central Clinic (Astana)
+- Bering Arsenal Clinic (Astana)
 
 ### Departments
 - Therapy
@@ -145,6 +151,8 @@ Seed includes:
 ### Public Content
 - `GET /api/v1/public/knowledge/articles`
 - `GET /api/v1/public/knowledge/articles/{slug}`
+- `GET /api/v1/public/doctors`
+- `GET /api/v1/public/doctors/{id}`
 
 ### Users
 - `GET /api/v1/users/{id}`
@@ -171,6 +179,7 @@ Seed includes:
 - `GET /api/v1/appointments?patientId=...`
 - `GET /api/v1/appointments?doctorId=...`
 - `GET /api/v1/appointments/calendar/doctors/{doctorId}`
+- `GET /api/v1/appointments/clinics/{clinicId}` (ADMIN/RECEPTIONIST)
 
 ### Events and Audit
 - `POST /api/v1/appointments/{appointmentId}/events`
@@ -185,7 +194,21 @@ Seed includes:
 - `POST /api/v1/knowledge/articles`
 - `PATCH /api/v1/knowledge/articles/{id}`
 
-## 9. Running the Project
+## 9. Frontend Role Workspaces
+
+Primary routes:
+- `/admin-app` (ADMIN)
+- `/reception-app` (RECEPTIONIST)
+- `/doctor-app` (DOCTOR, PSYCHOLOGIST)
+- `/patient-app` (PATIENT, CLIENT)
+- `/client-app` redirects to `/patient-app` for compatibility
+
+Patient booking flow:
+- open doctor catalog at `/doctors`
+- open detailed profile at `/doctors/:id`
+- select doctor and return to booking page (`/patient-app` or `/appointments`)
+
+## 10. Running the Project
 
 ### Option A: Docker (recommended)
 From repository root:
@@ -202,7 +225,7 @@ Stops containers:
 docker compose down
 ```
 
-## 10. Running Backend Locally
+## 11. Running Backend Locally
 
 ```bash
 cd backend
@@ -224,7 +247,7 @@ Compile only:
 .\mvnw.cmd -DskipTests compile
 ```
 
-## 11. Running Frontend Locally
+## 12. Running Frontend Locally
 
 ```bash
 cd frontend
@@ -242,7 +265,7 @@ npm.cmd run dev
 
 Frontend URL: `http://localhost:5173`
 
-## 12. Environment Variables
+## 13. Environment Variables
 
 ### Backend
 - `SPRING_DATASOURCE_URL`
@@ -254,13 +277,13 @@ Frontend URL: `http://localhost:5173`
 ### Frontend
 - `VITE_API_BASE_URL` (default: `http://localhost:8080/api/v1`)
 
-## 13. Swagger and Docs
+## 14. Swagger and Docs
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - API map: `docs/API_V1.md`
 - Docker notes: `docs/DOCKER.md`
 
-## 14. Quality and Validation
+## 15. Quality and Validation
 
 Recommended checks:
 
@@ -274,7 +297,7 @@ cd frontend
 npm run build
 ```
 
-## 15. Notes for Integrating Your Own Frontend
+## 16. Notes for Integrating Your Own Frontend
 
 Backend is API-first and already ready for separate React/Next/mobile clients:
 - stable `/api/v1` route prefix
@@ -286,7 +309,7 @@ Backend is API-first and already ready for separate React/Next/mobile clients:
 If you connect another frontend, keep JWT in auth header:
 `Authorization: Bearer <token>`
 
-## 16. Production Deploy (Railway + Vercel)
+## 17. Production Deploy (Railway + Vercel)
 
 Recommended production setup:
 - Backend + PostgreSQL on Railway

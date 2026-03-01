@@ -236,6 +236,15 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.List<AppointmentResponseDto> findByClinicId(Long clinicId) {
+        return appointmentRepository.findByClinic_IdOrderByTimeAsc(clinicId)
+                .stream()
+                .map(appointmentMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public java.util.List<AppointmentResponseDto> getDoctorCalendar(Long doctorId, LocalDate from, LocalDate to) {
         LocalDateTime fromDt = from.atStartOfDay();
         LocalDateTime toDt = to.plusDays(1).atStartOfDay().minusNanos(1);
