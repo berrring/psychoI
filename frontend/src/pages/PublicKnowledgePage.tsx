@@ -1,7 +1,9 @@
-import { FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest, toErrorMessage } from "../api";
+import { LibraryCard } from "../components/knowledge/LibraryCard";
 import type { Article, KnowledgeCategory, PageResponse } from "../types";
+import { splitTags } from "../utils/knowledge";
 
 const CATEGORIES: KnowledgeCategory[] = [
   "PREVENTION",
@@ -15,47 +17,78 @@ const CATEGORIES: KnowledgeCategory[] = [
   "NEWS"
 ];
 
-const CARE_PATHWAYS = [
-  {
-    title: "Diagnostics",
-    text: "MRI, ultrasound and lab pathways with rapid consultant reporting."
-  },
-  {
-    title: "Surgery & Treatment",
-    text: "Planned procedures and targeted therapy programmes across specialties."
-  },
-  {
-    title: "Rehabilitation",
-    text: "Recovery plans with physiotherapy, nutrition and follow-up monitoring."
-  },
-  {
-    title: "Mental Health",
-    text: "Psychologists and psychiatrists integrated with the wider clinical team."
-  }
-];
-
-const TRUST_POINTS = [
-  "Board-certified consultants",
-  "Evidence-based protocols",
-  "Secure digital patient history",
-  "24/7 patient contact centre"
-];
+type SortOption = "newest" | "relevant";
 
 function formatCategory(category: string): string {
   return category.replace(/_/g, " ");
 }
 
+function getRelevanceScore(article: Article, query: string): number {
+  if (!query.trim()) return 0;
+  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return 0;
+
+  const title = article.title.toLowerCase();
+  const summary = (article.summary || "").toLowerCase();
+  const tags = (article.tags || "").toLowerCase();
+
+  let score = 0;
+  for (const token of tokens) {
+    if (title.includes(token)) score += 4;
+    if (summary.includes(token)) score += 2;
+    if (tags.includes(token)) score += 1;
+  }
+  return score;
+}
+
+function LibrarySkeleton() {
+  return (
+    <div className="library-card-grid">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <article key={`library-skeleton-${index}`} className="library-card library-card-skeleton">
+          <div className="library-skeleton-line library-skeleton-line-short" />
+          <div className="library-skeleton-title" />
+          <div className="library-skeleton-line" />
+          <div className="library-skeleton-line library-skeleton-line-wide" />
+          <div className="library-skeleton-chip-row">
+            <span className="library-skeleton-chip" />
+            <span className="library-skeleton-chip" />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export function PublicKnowledgePage() {
-  const [queryInput, setQueryInput] = useState("");
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<KnowledgeCategory | "">("");
-  const [page, setPage] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const query = searchParams.get("q") ?? "";
+  const category = (searchParams.get("category") ?? "") as KnowledgeCategory | "";
+  const tag = searchParams.get("tag") ?? "";
+  const sort = (searchParams.get("sort") ?? "newest") as SortOption;
+  const page = Math.max(0, Number(searchParams.get("page") ?? 0) || 0);
+
+  const [queryInput, setQueryInput] = useState(query);
   const [result, setResult] = useState<PageResponse<Article> | null>(null);
-  const [news, setNews] = useState<Article[]>([]);
+  const [tagOptions, setTagOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newsLoading, setNewsLoading] = useState(false);
-  const [newsLoadFailed, setNewsLoadFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setQueryInput(query);
+  }, [query]);
+
+  useEffect(() => {
+    const restoreScrollY = (location.state as { restoreScrollY?: number } | null)?.restoreScrollY;
+    if (typeof restoreScrollY !== "number") return;
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: restoreScrollY, behavior: "auto" });
+      navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+    });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +104,7 @@ export function PublicKnowledgePage() {
             query: query || undefined,
             category: category || undefined,
             page,
-            size: 8
+            size: 12
           }
         );
         if (!cancelled) setResult(data);
@@ -89,217 +122,108 @@ export function PublicKnowledgePage() {
 
   useEffect(() => {
     let cancelled = false;
-    async function loadNews() {
-      setNewsLoading(true);
-      setNewsLoadFailed(false);
+    async function loadTags() {
       try {
-        const data = await apiRequest<PageResponse<Article>>(
+        const tagsSource = await apiRequest<PageResponse<Article>>(
           "/public/knowledge/articles",
           { method: "GET" },
           undefined,
-          {
-            category: "NEWS",
-            page: 0,
-            size: 3
-          }
+          { page: 0, size: 100 }
         );
-        if (!cancelled) setNews(data.content);
+        if (cancelled) return;
+        const uniqueTags = new Set<string>();
+        tagsSource.content.forEach((article) => {
+          splitTags(article.tags).forEach((value) => uniqueTags.add(value));
+        });
+        setTagOptions(Array.from(uniqueTags).sort((a, b) => a.localeCompare(b)));
       } catch {
-        if (!cancelled) setNewsLoadFailed(true);
-      } finally {
-        if (!cancelled) setNewsLoading(false);
+        if (!cancelled) setTagOptions([]);
       }
     }
-    loadNews();
+    loadTags();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  function onSearch(event: FormEvent) {
-    event.preventDefault();
-    setPage(0);
-    setQuery(queryInput.trim());
+  function updateSearchParams(updates: Record<string, string | number | null>) {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "" || value === 0) {
+        next.delete(key);
+      } else {
+        next.set(key, String(value));
+      }
+    });
+    setSearchParams(next);
   }
 
+  function onSearchSubmit(event: FormEvent) {
+    event.preventDefault();
+    updateSearchParams({ q: queryInput.trim(), page: 0 });
+  }
+
+  const visibleArticles = useMemo(() => {
+    const source = result?.content ?? [];
+
+    const tagFiltered = tag
+      ? source.filter((article) =>
+          splitTags(article.tags)
+            .map((value) => value.toLowerCase())
+            .includes(tag.toLowerCase())
+        )
+      : source;
+
+    const sorted = [...tagFiltered];
+    if (sort === "relevant") {
+      sorted.sort((a, b) => {
+        const scoreDiff = getRelevanceScore(b, query) - getRelevanceScore(a, query);
+        if (scoreDiff !== 0) return scoreDiff;
+        const bTime = new Date(b.publishedAt || b.createdAt).getTime();
+        const aTime = new Date(a.publishedAt || a.createdAt).getTime();
+        return bTime - aTime;
+      });
+      return sorted;
+    }
+
+    sorted.sort((a, b) => {
+      const bTime = new Date(b.publishedAt || b.createdAt).getTime();
+      const aTime = new Date(a.publishedAt || a.createdAt).getTime();
+      return bTime - aTime;
+    });
+    return sorted;
+  }, [result?.content, tag, sort, query]);
+
   return (
-    <section className="landing-page">
-      <div className="landing-hero">
-        <img
-          className="landing-hero-image"
-          src="/images/hero-doctor-patient.jpg"
-          alt="Doctor consultation with patient"
-        />
-        <div className="landing-hero-overlay">
-          <p className="eyebrow">Bering Professional Clinic Group</p>
-          <h2>Clinical excellence with one connected care journey</h2>
-          <p className="hero-copy">
-            Find trusted information, discover specialists, and move from diagnostics to treatment with one digital
-            platform.
-          </p>
+    <section className="panel library-page">
+      <header className="library-header">
+        <p className="eyebrow">Bering Knowledge Base</p>
+        <h2>Health Library</h2>
+        <p className="muted">
+          Structured, readable clinical reference articles with category filters and textbook-style navigation.
+        </p>
+      </header>
 
-          <form className="landing-search" onSubmit={onSearch}>
-            <input
-              value={queryInput}
-              onChange={(e) => setQueryInput(e.target.value)}
-              placeholder="Search conditions, diagnostics, treatment plans"
-            />
-            <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value as KnowledgeCategory | "");
-                setPage(0);
-              }}
-            >
-              <option value="">All categories</option>
-              {CATEGORIES.map((value) => (
-                <option key={value} value={value}>
-                  {formatCategory(value)}
-                </option>
-              ))}
-            </select>
-            <button type="submit">Search Library</button>
-          </form>
-
-          <div className="hero-stats">
-            <article className="hero-stat">
-              <strong>{result?.totalElements ?? 0}</strong>
-              <span>Published Articles</span>
-            </article>
-            <article className="hero-stat">
-              <strong>15+</strong>
-              <span>Clinical Disciplines</span>
-            </article>
-            <article className="hero-stat">
-              <strong>24/7</strong>
-              <span>Patient Support</span>
-            </article>
-          </div>
-
-          <p className="hero-endpoint">
-            Public API endpoint: <code>/api/v1/public/knowledge/articles</code>
-          </p>
-        </div>
-      </div>
-
-      <div className="trust-strip">
-        {TRUST_POINTS.map((item) => (
-          <p key={item}>{item}</p>
-        ))}
-      </div>
-
-      <section className="service-section">
-        <div className="section-heading">
-          <h3>Comprehensive care pathways</h3>
-          <p className="muted">
-            Structured treatment tracks from first symptoms to rehabilitation, powered by your backend domain modules.
-          </p>
-        </div>
-        <div className="service-grid">
-          {CARE_PATHWAYS.map((item) => (
-            <article key={item.title} className="service-card">
-              <h4>{item.title}</h4>
-              <p>{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="story-grid">
-        <article className="story-card story-card-large">
-          <img src="/images/team-corridor.jpg" alt="Medical team in hospital corridor" />
-          <div>
-            <h3>Consultant-led collaboration</h3>
-            <p>
-              Every patient plan is reviewed across departments, connecting doctors, diagnostics and long-term follow-up.
-            </p>
-          </div>
-        </article>
-
-        <article className="story-card">
-          <img src="/images/mri-scan.jpg" alt="MRI scan process" />
-          <div>
-            <h3>High-end diagnostics</h3>
-            <p>Faster imaging and reporting to shorten time from concern to treatment decision.</p>
-          </div>
-        </article>
-
-        <article className="story-card">
-          <img src="/images/reception-consultation.jpg" alt="Reception and consultation support" />
-          <div>
-            <h3>Seamless patient access</h3>
-            <p>Single front door for appointments, records and care coordination across clinics.</p>
-          </div>
-        </article>
-      </section>
-
-      <section className="news-section">
-        <div className="section-heading">
-          <h3>Clinic News and Updates</h3>
-          <p className="muted">Latest announcements from our medical network.</p>
-        </div>
-        {newsLoading && <p className="muted">Loading news...</p>}
-        {newsLoadFailed && <p className="muted">News feed is temporarily unavailable.</p>}
-        <div className="card-grid">
-          {news.map((article) => (
-            <article key={article.id} className="article-card article-card-rich">
-              <small>{formatCategory(article.category)}</small>
-              <h4>{article.title}</h4>
-              <p>{article.summary || "No summary provided."}</p>
-              <div className="meta-line">
-                <span>{article.authorName ?? "Bering communications team"}</span>
-                <Link to={`/knowledge/${article.slug}`}>Open</Link>
-              </div>
-            </article>
-          ))}
-          {!newsLoading && !news.length && <p className="muted">No news available yet.</p>}
-        </div>
-      </section>
-
-      <section className="care-details">
-        <article className="care-detail-card">
-          <img src="/images/hospital-corridor.jpg" alt="Hospital interior corridor" />
-          <div>
-            <h3>Modern Clinical Environment</h3>
-            <p>
-              Purpose-built spaces for diagnostics, consultation and day-case procedures, designed around patient
-              comfort and safety.
-            </p>
-          </div>
-        </article>
-        <article className="care-detail-card">
-          <img src="/images/patient-care.jpg" alt="Doctor supporting patient care process" />
-          <div>
-            <h3>Continuity of Care</h3>
-            <p>
-              One team follows your journey from first consultation to follow-up treatment, with transparent history and
-              outcome tracking.
-            </p>
-          </div>
-        </article>
-      </section>
-
-      <section className="panel knowledge-panel">
-        <div className="panel-head">
-          <div>
-            <h3>Medical encyclopedia</h3>
-            <p className="muted">Evidence-based guidance from the Bering clinical knowledge team.</p>
-          </div>
-          <span className="badge">{result?.totalElements ?? 0} total</span>
-        </div>
-
-        <form className="row-form row-form-compact" onSubmit={onSearch}>
+      <form className="library-controls" onSubmit={onSearchSubmit}>
+        <label>
+          Search
           <input
             value={queryInput}
-            onChange={(e) => setQueryInput(e.target.value)}
-            placeholder="Search by title, summary or tags"
+            onChange={(event) => setQueryInput(event.target.value)}
+            placeholder="Search conditions, diagnostics, treatment protocols"
           />
+        </label>
+
+        <label>
+          Category
           <select
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value as KnowledgeCategory | "");
-              setPage(0);
-            }}
+            onChange={(event) =>
+              updateSearchParams({
+                category: event.target.value,
+                page: 0
+              })
+            }
           >
             <option value="">All categories</option>
             {CATEGORIES.map((value) => (
@@ -308,47 +232,103 @@ export function PublicKnowledgePage() {
               </option>
             ))}
           </select>
-          <button type="submit">Apply Filters</button>
-        </form>
+        </label>
 
-        {loading && <p className="muted">Loading articles...</p>}
-        {error && <p className="error">{error}</p>}
-        {!loading && !error && result?.content.length === 0 && (
-          <p className="muted">No articles found for selected filters.</p>
-        )}
+        <label>
+          Tag
+          <select
+            value={tag}
+            onChange={(event) =>
+              updateSearchParams({
+                tag: event.target.value,
+                page: 0
+              })
+            }
+          >
+            <option value="">All tags</option>
+            {tagOptions.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
 
-        <div className="card-grid article-grid">
-          {result?.content.map((article) => (
-            <article key={article.id} className="article-card article-card-rich">
-              <small>{formatCategory(article.category)}</small>
-              <h4>{article.title}</h4>
-              <p>{article.summary || "No summary provided."}</p>
-              <div className="meta-line">
-                <span>{article.authorName ?? "Bering editorial team"}</span>
-                <Link to={`/knowledge/${article.slug}`}>Read Article</Link>
-              </div>
-            </article>
-          ))}
+        <label>
+          Sort
+          <select
+            value={sort}
+            onChange={(event) =>
+              updateSearchParams({
+                sort: event.target.value as SortOption
+              })
+            }
+          >
+            <option value="newest">Newest</option>
+            <option value="relevant">Most relevant</option>
+          </select>
+        </label>
+
+        <div className="library-control-actions">
+          <button type="submit">Apply</button>
+          <button
+            type="button"
+            className="library-inline-btn"
+            onClick={() => {
+              setQueryInput("");
+              setSearchParams(new URLSearchParams());
+            }}
+          >
+            Reset
+          </button>
         </div>
+      </form>
 
-        {result && (
-          <div className="pagination-bar">
-            <button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={result.first}>
-              Previous
-            </button>
-            <span>
-              Page {result.number + 1} / {Math.max(1, result.totalPages)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={result.last || result.totalPages === 0}
-            >
-              Next
-            </button>
+      <p className="muted">
+        Public endpoint: <code>/api/v1/public/knowledge/articles</code>
+      </p>
+
+      {loading && <LibrarySkeleton />}
+      {error && <p className="error">{error}</p>}
+
+      {!loading && !error && (
+        <>
+          {!visibleArticles.length && (
+            <div className="library-empty">
+              <h3>No articles found</h3>
+              <p className="muted">Try broadening your query or removing one of the filters.</p>
+            </div>
+          )}
+
+          <div className="library-card-grid">
+            {visibleArticles.map((article) => (
+              <LibraryCard key={article.id} article={article} from={location.pathname + location.search} />
+            ))}
           </div>
-        )}
-      </section>
+
+          {result && (
+            <div className="pagination-bar">
+              <button
+                type="button"
+                onClick={() => updateSearchParams({ page: Math.max(0, page - 1) })}
+                disabled={result.first}
+              >
+                Previous
+              </button>
+              <span>
+                Page {result.number + 1} / {Math.max(1, result.totalPages)}
+              </span>
+              <button
+                type="button"
+                onClick={() => updateSearchParams({ page: page + 1 })}
+                disabled={result.last || result.totalPages === 0}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }

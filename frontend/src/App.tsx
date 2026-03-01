@@ -38,6 +38,8 @@ export default function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<PublicKnowledgePage />} />
+        <Route path="/health-library" element={<PublicKnowledgePage />} />
+        <Route path="/knowledge" element={<PublicKnowledgePage />} />
         <Route path="/knowledge/:slug" element={<ArticlePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
