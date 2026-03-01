@@ -1,7 +1,16 @@
 import type { ApiError } from "./types";
 
+const isLocalHost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
+
+const DEFAULT_API_BASE_URL = isLocalHost
+  ? "http://localhost:8080/api/v1"
+  : "https://psycho-dwq2.onrender.com/api/v1";
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
+  import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 
 export class HttpError extends Error {
   status: number;
