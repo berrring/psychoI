@@ -4,7 +4,8 @@ import { useAuth } from "../auth";
 import type { PageResponse, UserInfo } from "../types";
 
 export function UsersPage() {
-  const { token } = useAuth();
+  const { token, hasRole } = useAuth();
+  const canViewPatients = hasRole("ADMIN", "RECEPTIONIST", "DOCTOR", "PSYCHOLOGIST");
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [doctorPage, setDoctorPage] = useState(0);
@@ -27,12 +28,14 @@ export function UsersPage() {
             token,
             { query: search || undefined, page: doctorPage, size: 10 }
           ),
-          apiRequest<PageResponse<UserInfo>>(
-            "/users/patients",
-            { method: "GET" },
-            token,
-            { page: 0, size: 10 }
-          ).catch(() => null)
+          canViewPatients
+            ? apiRequest<PageResponse<UserInfo>>(
+                "/users/patients",
+                { method: "GET" },
+                token,
+                { page: 0, size: 10 }
+              ).catch(() => null)
+            : Promise.resolve(null)
         ]);
         if (!cancelled) {
           setDoctors(doctorData);
@@ -48,7 +51,7 @@ export function UsersPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, search, doctorPage]);
+  }, [token, search, doctorPage, canViewPatients]);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -110,7 +113,7 @@ export function UsersPage() {
 
         <div className="panel-sub">
           <h3>Patients</h3>
-          <p className="muted">Visible for staff roles. Patients may receive 403.</p>
+          {!canViewPatients && <p className="muted">Patient list is available for staff roles only.</p>}
           <ul className="list">
             {patients?.content.map((patient) => (
               <li key={patient.id}>
@@ -119,7 +122,7 @@ export function UsersPage() {
               </li>
             ))}
           </ul>
-          {!patients && <p className="muted">No access or no data.</p>}
+          {!patients && canViewPatients && <p className="muted">No patient data.</p>}
         </div>
       </div>
     </section>

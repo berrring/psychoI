@@ -4,7 +4,8 @@ import { useAuth } from "../auth";
 import type { AuditEvent, PageResponse } from "../types";
 
 export function AuditPage() {
-  const { token } = useAuth();
+  const { token, hasRole } = useAuth();
+  const canQueryByActor = hasRole("ADMIN", "RECEPTIONIST");
   const [entityName, setEntityName] = useState("appointments");
   const [entityId, setEntityId] = useState<number>(0);
   const [actorId, setActorId] = useState<number>(0);
@@ -32,7 +33,7 @@ export function AuditPage() {
   }
 
   async function loadByActor() {
-    if (!token || !actorId) return;
+    if (!token || !actorId || !canQueryByActor) return;
     setLoading(true);
     setError(null);
     try {
@@ -54,6 +55,9 @@ export function AuditPage() {
     <section className="panel">
       <h2>Audit Events</h2>
       <p className="muted">Staff endpoint with role restrictions.</p>
+      {!canQueryByActor && (
+        <p className="muted">Actor-based audit lookup is available only for ADMIN and RECEPTIONIST roles.</p>
+      )}
 
       <div className="split-grid">
         <div className="panel-sub">
@@ -76,20 +80,22 @@ export function AuditPage() {
           </div>
         </div>
 
-        <div className="panel-sub">
-          <h3>By Actor</h3>
-          <div className="form-grid">
-            <input
-              type="number"
-              value={actorId || ""}
-              onChange={(e) => setActorId(Number(e.target.value))}
-              placeholder="actor id"
-            />
-            <button type="button" onClick={loadByActor}>
-              Load by Actor
-            </button>
+        {canQueryByActor && (
+          <div className="panel-sub">
+            <h3>By Actor</h3>
+            <div className="form-grid">
+              <input
+                type="number"
+                value={actorId || ""}
+                onChange={(e) => setActorId(Number(e.target.value))}
+                placeholder="actor id"
+              />
+              <button type="button" onClick={loadByActor}>
+                Load by Actor
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {loading && <p className="muted">Loading audit data...</p>}

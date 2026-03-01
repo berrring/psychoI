@@ -26,7 +26,7 @@ export function AdminWorkspacePage() {
     title: "",
     summary: "",
     content: "",
-    tags: "news,clinic,update",
+    tags: "news,bering,update",
     published: true
   });
 
@@ -97,7 +97,7 @@ export function AdminWorkspacePage() {
         title: "",
         summary: "",
         content: "",
-        tags: "news,clinic,update",
+        tags: "news,bering,update",
         published: true
       });
       await loadAdminWorkspace();

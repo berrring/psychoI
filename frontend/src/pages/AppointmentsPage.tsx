@@ -62,6 +62,18 @@ export function AppointmentsPage() {
     () => !hasRole("PATIENT", "CLIENT"),
     [hasRole]
   );
+  const canManageStatuses = useMemo(
+    () => hasRole("ADMIN", "RECEPTIONIST", "DOCTOR", "PSYCHOLOGIST"),
+    [hasRole]
+  );
+
+  useEffect(() => {
+    if (!session) return;
+    if (hasRole("PATIENT", "CLIENT")) {
+      setFilterBy("patientId");
+      setFilterId(session.userId);
+    }
+  }, [session?.userId, hasRole]);
 
   async function loadReferenceData() {
     if (!token) return;
@@ -76,16 +88,18 @@ export function AppointmentsPage() {
     const clinicResp = await apiRequest<Clinic[]>("/clinics", { method: "GET" }, token);
     setClinics(clinicResp);
 
-    try {
-      const patientResp = await apiRequest<PageResponse<UserInfo>>(
-        "/users/patients",
-        { method: "GET" },
-        token,
-        { page: 0, size: 200 }
-      );
-      setPatients(patientResp.content);
-    } catch {
-      setPatients([]);
+    if (canSelectAnyPatient) {
+      try {
+        const patientResp = await apiRequest<PageResponse<UserInfo>>(
+          "/users/patients",
+          { method: "GET" },
+          token,
+          { page: 0, size: 200 }
+        );
+        setPatients(patientResp.content);
+      } catch {
+        setPatients([]);
+      }
     }
   }
 
@@ -107,7 +121,7 @@ export function AppointmentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, canSelectAnyPatient]);
 
   useEffect(() => {
     let cancelled = false;
@@ -219,7 +233,7 @@ export function AppointmentsPage() {
   }
 
   async function onStatusChange(id: number, status: AppointmentStatus) {
-    if (!token) return;
+    if (!token || !canManageStatuses) return;
     setPendingStatusId(id);
     setError(null);
     try {
@@ -247,6 +261,9 @@ export function AppointmentsPage() {
     <section className="panel">
       <h2>Appointments</h2>
       <p className="muted">Endpoints: <code>/api/v1/appointments</code> and <code>/api/v1/appointments/:id/status</code></p>
+      {!canManageStatuses && (
+        <p className="muted">Status updates are available for staff roles only.</p>
+      )}
 
       {error && <p className="error">{error}</p>}
       {loading && <p className="muted">Loading...</p>}
@@ -375,29 +392,37 @@ export function AppointmentsPage() {
         <div className="panel-sub">
           <h3>Find Appointments</h3>
           <div className="row-form">
-            <select value={filterBy} onChange={(e) => setFilterBy(e.target.value as "patientId" | "doctorId")}>
-              <option value="patientId">By patientId</option>
-              <option value="doctorId">By doctorId</option>
-            </select>
-            <input
-              type="number"
-              value={filterId || ""}
-              onChange={(e) => setFilterId(Number(e.target.value))}
-              placeholder="User ID"
-            />
+            {canSelectAnyPatient ? (
+              <>
+                <select value={filterBy} onChange={(e) => setFilterBy(e.target.value as "patientId" | "doctorId")}>
+                  <option value="patientId">By patientId</option>
+                  <option value="doctorId">By doctorId</option>
+                </select>
+                <input
+                  type="number"
+                  value={filterId || ""}
+                  onChange={(e) => setFilterId(Number(e.target.value))}
+                  placeholder="User ID"
+                />
+              </>
+            ) : (
+              <p className="muted">Showing appointments for your patient account (ID: {session?.userId}).</p>
+            )}
             <button type="button" onClick={loadAppointments}>
               Load
             </button>
           </div>
 
-          <label>
-            Status change reason
-            <input
-              value={statusReason}
-              onChange={(e) => setStatusReason(e.target.value)}
-              placeholder="Optional reason for cancellation/status update"
-            />
-          </label>
+          {canManageStatuses && (
+            <label>
+              Status change reason
+              <input
+                value={statusReason}
+                onChange={(e) => setStatusReason(e.target.value)}
+                placeholder="Optional reason for cancellation/status update"
+              />
+            </label>
+          )}
 
           <ul className="list">
             {appointments?.content.map((appointment) => (
@@ -411,17 +436,21 @@ export function AppointmentsPage() {
                   </p>
                 </div>
                 <div className="inline-actions">
-                  {STATUS_OPTIONS.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      className={status === appointment.status ? "ghost-btn ghost-btn-active" : "ghost-btn"}
-                      onClick={() => onStatusChange(appointment.id, status)}
-                      disabled={pendingStatusId === appointment.id}
-                    >
-                      {status}
-                    </button>
-                  ))}
+                  {canManageStatuses ? (
+                    STATUS_OPTIONS.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className={status === appointment.status ? "ghost-btn ghost-btn-active" : "ghost-btn"}
+                        onClick={() => onStatusChange(appointment.id, status)}
+                        disabled={pendingStatusId === appointment.id}
+                      >
+                        {status}
+                      </button>
+                    ))
+                  ) : (
+                    <span className={`status-chip status-chip-${appointment.status.toLowerCase()}`}>{appointment.status}</span>
+                  )}
                 </div>
               </li>
             ))}

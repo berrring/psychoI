@@ -129,7 +129,7 @@ export function PublicKnowledgePage() {
           alt="Doctor consultation with patient"
         />
         <div className="landing-hero-overlay">
-          <p className="eyebrow">NorthCare Private Hospital Group</p>
+          <p className="eyebrow">Bering Professional Clinic Group</p>
           <h2>Clinical excellence with one connected care journey</h2>
           <p className="hero-copy">
             Find trusted information, discover specialists, and move from diagnostics to treatment with one digital
@@ -244,7 +244,7 @@ export function PublicKnowledgePage() {
               <h4>{article.title}</h4>
               <p>{article.summary || "No summary provided."}</p>
               <div className="meta-line">
-                <span>{article.authorName ?? "NorthCare communications team"}</span>
+                <span>{article.authorName ?? "Bering communications team"}</span>
                 <Link to={`/knowledge/${article.slug}`}>Open</Link>
               </div>
             </article>
@@ -280,7 +280,7 @@ export function PublicKnowledgePage() {
         <div className="panel-head">
           <div>
             <h3>Medical encyclopedia</h3>
-            <p className="muted">Evidence-based guidance from the NorthCare clinical knowledge team.</p>
+            <p className="muted">Evidence-based guidance from the Bering clinical knowledge team.</p>
           </div>
           <span className="badge">{result?.totalElements ?? 0} total</span>
         </div>
@@ -321,7 +321,7 @@ export function PublicKnowledgePage() {
               <h4>{article.title}</h4>
               <p>{article.summary || "No summary provided."}</p>
               <div className="meta-line">
-                <span>{article.authorName ?? "NorthCare editorial team"}</span>
+                <span>{article.authorName ?? "Bering editorial team"}</span>
                 <Link to={`/knowledge/${article.slug}`}>Read Article</Link>
               </div>
             </article>

@@ -39,21 +39,21 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         ClinicEntity centralClinic = ensureClinic(
-                "NorthCare Central Clinic",
-                "New York",
-                "101 Main Street",
-                "+1-212-555-0181",
+                "Bering Central Clinic",
+                "Astana",
+                "Arsenal Avenue 101",
+                "+77-717-555-0181",
                 "central@clinic.local",
-                "Multidisciplinary outpatient clinic with diagnostics, therapy and mental health support"
+                "Bering flagship clinic for diagnostics, therapy and integrated mental health support"
         );
 
         ClinicEntity riversideClinic = ensureClinic(
-                "NorthCare Riverside Clinic",
-                "Brooklyn",
-                "22 Riverside Avenue",
-                "+1-347-555-0175",
+                "Bering Arsenal Clinic",
+                "Astana",
+                "Arsenal District 22",
+                "+77-717-555-0175",
                 "riverside@clinic.local",
-                "Cardiology and advanced diagnostics center with day-case procedures"
+                "Bering specialty center for cardiology and advanced diagnostics"
         );
 
         DepartmentEntity therapy = ensureDepartment(centralClinic, "Therapy", "General outpatient therapy and follow-up");
@@ -82,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Admin123!",
                 UserRole.ADMIN,
                 centralClinic,
-                "+1-212-555-1001",
+                "+77-717-555-1001",
                 "Healthcare platform operations",
                 null,
                 14,
@@ -95,7 +95,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Reception123!",
                 UserRole.RECEPTIONIST,
                 centralClinic,
-                "+1-212-555-1002",
+                "+77-717-555-1002",
                 "Patient coordination",
                 null,
                 6,
@@ -108,7 +108,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Doctor123!",
                 UserRole.DOCTOR,
                 centralClinic,
-                "+1-212-555-1101",
+                "+77-717-555-1101",
                 "Internal medicine",
                 "NY-IM-44718",
                 12,
@@ -121,7 +121,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Doctor123!",
                 UserRole.DOCTOR,
                 centralClinic,
-                "+1-212-555-1102",
+                "+77-717-555-1102",
                 "Cardiology",
                 "NY-CARD-33892",
                 9,
@@ -134,7 +134,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Doctor123!",
                 UserRole.DOCTOR,
                 riversideClinic,
-                "+1-347-555-1103",
+                "+77-717-555-1103",
                 "Diagnostics",
                 "NY-DIAG-55217",
                 7,
@@ -147,7 +147,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Doctor123!",
                 UserRole.DOCTOR,
                 riversideClinic,
-                "+1-347-555-1104",
+                "+77-717-555-1104",
                 "Radiology",
                 "NY-RAD-88124",
                 8,
@@ -160,7 +160,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Doctor123!",
                 UserRole.PSYCHOLOGIST,
                 centralClinic,
-                "+1-212-555-1201",
+                "+77-717-555-1201",
                 "Clinical psychology",
                 "NY-PSY-22460",
                 11,
@@ -173,7 +173,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Patient123!",
                 UserRole.PATIENT,
                 centralClinic,
-                "+1-917-555-2001",
+                "+77-717-555-2001",
                 null,
                 null,
                 0,
@@ -186,7 +186,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Client123!",
                 UserRole.CLIENT,
                 centralClinic,
-                "+1-917-555-2002",
+                "+77-717-555-2002",
                 null,
                 null,
                 0,
@@ -199,7 +199,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Patient123!",
                 UserRole.PATIENT,
                 riversideClinic,
-                "+1-917-555-2003",
+                "+77-717-555-2003",
                 null,
                 null,
                 0,
@@ -309,9 +309,9 @@ public class DataInitializer implements CommandLineRunner {
                 ),
                 new ArticleSeed(
                         "news-riverside-imaging-launch",
-                        "New Imaging Unit Opened at Riverside Clinic",
-                        "NorthCare launched an expanded MRI and ultrasound unit in Brooklyn.",
-                        "Our Riverside location now provides faster diagnostics with extended evening shifts and consultant-led interpretation.",
+                        "New Imaging Unit Opened at Bering Arsenal Clinic",
+                        "Bering launched an expanded MRI and ultrasound unit in the Arsenal district.",
+                        "Our Arsenal location now provides faster diagnostics with extended evening shifts and consultant-led interpretation.",
                         KnowledgeCategory.NEWS,
                         "news,imaging,clinic-update"
                 ),
@@ -326,7 +326,7 @@ public class DataInitializer implements CommandLineRunner {
                 new ArticleSeed(
                         "news-cardiology-program-2026",
                         "Cardiology Prevention Program 2026",
-                        "NorthCare started a preventive program for high-risk cardiovascular patients.",
+                        "Bering started a preventive program for high-risk cardiovascular patients.",
                         "The new pathway combines lab tracking, imaging, nutrition counseling and coordinated follow-up with cardiology specialists.",
                         KnowledgeCategory.NEWS,
                         "news,cardiology,prevention"
@@ -352,17 +352,19 @@ public class DataInitializer implements CommandLineRunner {
                                       String phone,
                                       String email,
                                       String description) {
-        return clinicRepository.findByName(name).orElseGet(() -> {
-            ClinicEntity clinic = new ClinicEntity();
-            clinic.setName(name);
-            clinic.setCity(city);
-            clinic.setAddress(address);
-            clinic.setPhone(phone);
-            clinic.setEmail(email);
-            clinic.setDescription(description);
-            clinic.setActive(true);
-            return clinicRepository.save(clinic);
-        });
+        ClinicEntity clinic = clinicRepository.findByEmail(email)
+                .or(() -> clinicRepository.findByName(name))
+                .orElseGet(ClinicEntity::new);
+
+        clinic.setName(name);
+        clinic.setCity(city);
+        clinic.setAddress(address);
+        clinic.setPhone(phone);
+        clinic.setEmail(email);
+        clinic.setDescription(description);
+        clinic.setActive(true);
+
+        return clinicRepository.save(clinic);
     }
 
     private DepartmentEntity ensureDepartment(ClinicEntity clinic, String name, String description) {

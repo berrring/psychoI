@@ -4,7 +4,8 @@ import { useAuth } from "../auth";
 import type { Clinic, Department, MedicalService } from "../types";
 
 export function ClinicsPage() {
-  const { token } = useAuth();
+  const { token, hasRole } = useAuth();
+  const canManageClinicData = hasRole("ADMIN", "RECEPTIONIST");
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [services, setServices] = useState<MedicalService[]>([]);
@@ -183,6 +184,9 @@ export function ClinicsPage() {
     <section className="panel">
       <h2>Clinics</h2>
       <p className="muted">Endpoints: <code>/api/v1/clinics/*</code></p>
+      {!canManageClinicData && (
+        <p className="muted">Read-only mode. Create/update actions are available for ADMIN and RECEPTIONIST roles.</p>
+      )}
 
       {loading && <p className="muted">Loading clinics...</p>}
       {error && <p className="error">{error}</p>}
@@ -208,44 +212,48 @@ export function ClinicsPage() {
             </div>
           )}
 
-          <h4>Create Clinic</h4>
-          <form onSubmit={createClinic} className="form-grid">
-            <input
-              placeholder="Name"
-              value={clinicForm.name}
-              onChange={(e) => setClinicForm((v) => ({ ...v, name: e.target.value }))}
-              required
-            />
-            <input
-              placeholder="City"
-              value={clinicForm.city}
-              onChange={(e) => setClinicForm((v) => ({ ...v, city: e.target.value }))}
-              required
-            />
-            <input
-              placeholder="Address"
-              value={clinicForm.address}
-              onChange={(e) => setClinicForm((v) => ({ ...v, address: e.target.value }))}
-              required
-            />
-            <input
-              placeholder="Phone"
-              value={clinicForm.phone}
-              onChange={(e) => setClinicForm((v) => ({ ...v, phone: e.target.value }))}
-            />
-            <input
-              placeholder="Email"
-              type="email"
-              value={clinicForm.email}
-              onChange={(e) => setClinicForm((v) => ({ ...v, email: e.target.value }))}
-            />
-            <textarea
-              placeholder="Description"
-              value={clinicForm.description}
-              onChange={(e) => setClinicForm((v) => ({ ...v, description: e.target.value }))}
-            />
-            <button type="submit">Create Clinic</button>
-          </form>
+          {canManageClinicData && (
+            <>
+              <h4>Create Clinic</h4>
+              <form onSubmit={createClinic} className="form-grid">
+                <input
+                  placeholder="Name"
+                  value={clinicForm.name}
+                  onChange={(e) => setClinicForm((v) => ({ ...v, name: e.target.value }))}
+                  required
+                />
+                <input
+                  placeholder="City"
+                  value={clinicForm.city}
+                  onChange={(e) => setClinicForm((v) => ({ ...v, city: e.target.value }))}
+                  required
+                />
+                <input
+                  placeholder="Address"
+                  value={clinicForm.address}
+                  onChange={(e) => setClinicForm((v) => ({ ...v, address: e.target.value }))}
+                  required
+                />
+                <input
+                  placeholder="Phone"
+                  value={clinicForm.phone}
+                  onChange={(e) => setClinicForm((v) => ({ ...v, phone: e.target.value }))}
+                />
+                <input
+                  placeholder="Email"
+                  type="email"
+                  value={clinicForm.email}
+                  onChange={(e) => setClinicForm((v) => ({ ...v, email: e.target.value }))}
+                />
+                <textarea
+                  placeholder="Description"
+                  value={clinicForm.description}
+                  onChange={(e) => setClinicForm((v) => ({ ...v, description: e.target.value }))}
+                />
+                <button type="submit">Create Clinic</button>
+              </form>
+            </>
+          )}
         </div>
 
         <div className="panel-sub">
@@ -264,23 +272,27 @@ export function ClinicsPage() {
             ))}
           </ul>
 
-          <h4>Create Department</h4>
-          <form onSubmit={createDepartment} className="form-grid">
-            <input
-              placeholder="Name"
-              value={departmentForm.name}
-              onChange={(e) => setDepartmentForm((v) => ({ ...v, name: e.target.value }))}
-              required
-            />
-            <textarea
-              placeholder="Description"
-              value={departmentForm.description}
-              onChange={(e) => setDepartmentForm((v) => ({ ...v, description: e.target.value }))}
-            />
-            <button type="submit" disabled={!selectedClinicId}>
-              Create Department
-            </button>
-          </form>
+          {canManageClinicData && (
+            <>
+              <h4>Create Department</h4>
+              <form onSubmit={createDepartment} className="form-grid">
+                <input
+                  placeholder="Name"
+                  value={departmentForm.name}
+                  onChange={(e) => setDepartmentForm((v) => ({ ...v, name: e.target.value }))}
+                  required
+                />
+                <textarea
+                  placeholder="Description"
+                  value={departmentForm.description}
+                  onChange={(e) => setDepartmentForm((v) => ({ ...v, description: e.target.value }))}
+                />
+                <button type="submit" disabled={!selectedClinicId}>
+                  Create Department
+                </button>
+              </form>
+            </>
+          )}
 
           <h3>Services</h3>
           <ul className="list">
@@ -291,52 +303,56 @@ export function ClinicsPage() {
             ))}
           </ul>
 
-          <h4>Create Service</h4>
-          <form onSubmit={createService} className="form-grid">
-            <input
-              placeholder="Code"
-              value={serviceForm.code}
-              onChange={(e) => setServiceForm((v) => ({ ...v, code: e.target.value }))}
-              required
-            />
-            <input
-              placeholder="Name"
-              value={serviceForm.name}
-              onChange={(e) => setServiceForm((v) => ({ ...v, name: e.target.value }))}
-              required
-            />
-            <textarea
-              placeholder="Description"
-              value={serviceForm.description}
-              onChange={(e) => setServiceForm((v) => ({ ...v, description: e.target.value }))}
-            />
-            <label>
-              Duration minutes
-              <input
-                type="number"
-                min={5}
-                value={serviceForm.durationMinutes}
-                onChange={(e) =>
-                  setServiceForm((v) => ({ ...v, durationMinutes: Number(e.target.value) }))
-                }
-              />
-            </label>
-            <label>
-              Base price
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={serviceForm.basePrice}
-                onChange={(e) =>
-                  setServiceForm((v) => ({ ...v, basePrice: Number(e.target.value) }))
-                }
-              />
-            </label>
-            <button type="submit" disabled={!selectedDepartmentId}>
-              Create Service
-            </button>
-          </form>
+          {canManageClinicData && (
+            <>
+              <h4>Create Service</h4>
+              <form onSubmit={createService} className="form-grid">
+                <input
+                  placeholder="Code"
+                  value={serviceForm.code}
+                  onChange={(e) => setServiceForm((v) => ({ ...v, code: e.target.value }))}
+                  required
+                />
+                <input
+                  placeholder="Name"
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm((v) => ({ ...v, name: e.target.value }))}
+                  required
+                />
+                <textarea
+                  placeholder="Description"
+                  value={serviceForm.description}
+                  onChange={(e) => setServiceForm((v) => ({ ...v, description: e.target.value }))}
+                />
+                <label>
+                  Duration minutes
+                  <input
+                    type="number"
+                    min={5}
+                    value={serviceForm.durationMinutes}
+                    onChange={(e) =>
+                      setServiceForm((v) => ({ ...v, durationMinutes: Number(e.target.value) }))
+                    }
+                  />
+                </label>
+                <label>
+                  Base price
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={serviceForm.basePrice}
+                    onChange={(e) =>
+                      setServiceForm((v) => ({ ...v, basePrice: Number(e.target.value) }))
+                    }
+                  />
+                </label>
+                <button type="submit" disabled={!selectedDepartmentId}>
+                  Create Service
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </section>

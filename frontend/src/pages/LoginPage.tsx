@@ -54,7 +54,7 @@ export function LoginPage() {
       </form>
 
       <div className="hint-box">
-        <h3>Demo Credentials</h3>
+        <h3>Bering Demo Credentials</h3>
         <p>
           <strong>Admin:</strong> admin@clinic.local / Admin123!
         </p>

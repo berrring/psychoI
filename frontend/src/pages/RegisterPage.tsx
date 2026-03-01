@@ -50,7 +50,11 @@ export function RegisterPage() {
         </label>
         <label>
           Phone
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+77..."
+          />
         </label>
         <label>
           Password

@@ -90,6 +90,7 @@ export function AppShell() {
   const { isAuthenticated, session, logout } = useAuth();
   const location = useLocation();
   const role = session?.role;
+  const canOpenEditorial = role === "ADMIN" || isDoctorRole(role);
 
   const headerLinks = getHeaderLinks(isAuthenticated, role);
   const portalLinks = getPortalLinks(role);
@@ -105,15 +106,15 @@ export function AppShell() {
     <div className="app-shell">
       <header className="site-header">
         <div className="utility-bar">
-          <p>National care line: +1 (800) 555-1024</p>
+          <p>National care line: +77 (717) 555-1024</p>
           <span>Integrated diagnostics, treatment and rehabilitation</span>
         </div>
         <div className="topbar">
           <NavLink to="/" className="brand-block">
             <div className="brand-mark" />
             <div>
-              <h1>NorthCare Clinics</h1>
-              <p>Private healthcare network and patient platform</p>
+              <h1>Bering Clinics</h1>
+              <p>Professional healthcare network and patient platform</p>
             </div>
           </NavLink>
 
@@ -163,9 +164,11 @@ export function AppShell() {
               <NavLink to="/" className={sideLinkClassName}>
                 Public Encyclopedia
               </NavLink>
-              <NavLink to="/knowledge-admin" className={sideLinkClassName}>
-                Editorial
-              </NavLink>
+              {canOpenEditorial && (
+                <NavLink to="/knowledge-admin" className={sideLinkClassName}>
+                  Editorial
+                </NavLink>
+              )}
             </div>
           </nav>
         )}
@@ -178,8 +181,8 @@ export function AppShell() {
       <footer className="site-footer">
         <div className="footer-grid">
           <section className="footer-col">
-            <h4>NorthCare Clinics</h4>
-            <p>Private multi-specialty network for diagnostics, treatment and rehabilitation.</p>
+            <h4>Bering Clinics</h4>
+            <p>Professional multi-specialty network for diagnostics, treatment and rehabilitation.</p>
           </section>
           <section className="footer-col">
             <h4>Patient Services</h4>
@@ -207,8 +210,9 @@ export function AppShell() {
           </section>
           <section className="footer-col">
             <h4>Contact</h4>
-            <p>+1 (800) 555-1024</p>
-            <p>support@northcare.local</p>
+            <p>+77 (717) 555-1024</p>
+            <p>support@bering.clinic</p>
+            <p>Arsenal Avenue, Astana</p>
             <p>Mon-Sun, 24/7 Patient Line</p>
           </section>
         </div>
