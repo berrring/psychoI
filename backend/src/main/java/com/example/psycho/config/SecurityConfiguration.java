@@ -28,7 +28,7 @@ public class SecurityConfiguration {
 
     public SecurityConfiguration(JwtAuthenticationFilter jwtAuthFilter,
                                  AuthenticationProvider authenticationProvider,
-                                 @Value("${app.cors.allowed-origin-patterns:http://localhost:*,https://*.vercel.app}") String allowedOriginPatterns) {
+                                 @Value("${app.cors.allowed-origin-patterns:http://localhost:*,https://*.vercel.app,https://*.onrender.com}") String allowedOriginPatterns) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.authenticationProvider = authenticationProvider;
         this.allowedOriginPatterns = Arrays.stream(allowedOriginPatterns.split(","))
